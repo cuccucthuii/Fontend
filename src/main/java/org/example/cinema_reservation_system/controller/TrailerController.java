@@ -2,8 +2,8 @@ package org.example.cinema_reservation_system.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.cinema_reservation_system.dto.phimdto.TrailerRequestDto;
-import org.example.cinema_reservation_system.dto.phimdto.TrailerResponseDto;
+import org.example.cinema_reservation_system.dto.moviedto.TrailerRequestDto;
+import org.example.cinema_reservation_system.dto.moviedto.TrailerResponseDto;
 import org.example.cinema_reservation_system.service.TrailerService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/trailer")
 @RequiredArgsConstructor
-
+@CrossOrigin(origins = "http://localhost:5173")
 public class TrailerController {
     private final TrailerService trailerService;
 

@@ -1,0 +1,45 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/DevCinema01
+    username: postgres
+    password: anh2005
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: anhntmph51728@gmail.com
+    password: yvhqhqsqjvegbrye
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+            connection-tiemout: 5000
+            timeout: 5000
+            write timeout: 5000
+
+  otp:
+    expiration: 120  # Thời gian hết hạn OTP (giây) - 1 phút
+    length: 6       # Độ dài mã OTP
+    max-attempts: 3 # Số lần thử tối đa
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
+# cau hinh sandbox vnpay
+vnpay:
+  tmn-code: V680NE3U
+  hash-secret: YKQA9UX2JZ6MMASQ4RCDE6T9PM2SWH5Y
+  pay-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: http://127.0.0.1:8080/api/vnpay/return
