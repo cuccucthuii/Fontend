@@ -1,0 +1,49 @@
+/* Global Font Styles */
+* {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+html, body, #app {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Header specific fonts */
+.main-header,
+.main-header *,
+.landing-header,
+.landing-header * {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Navigation links */
+.menu-link,
+.nav-link,
+.logo,
+.logo * {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Buttons */
+button,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-login,
+.btn-register {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Text elements */
+p, span, div, a {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+/* Form elements */
+input, select, textarea, label {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+} 

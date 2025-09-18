@@ -1,0 +1,55 @@
+/* Global Font Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --app-font: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  font-family: var(--app-font) !important;
+}
+
+html, body, #app {
+  font-family: var(--app-font) !important;
+}
+
+/* Header specific fonts */
+.main-header,
+.main-header *,
+.landing-header,
+.landing-header * {
+  font-family: var(--app-font) !important;
+}
+
+/* Navigation links */
+.menu-link,
+.nav-link,
+.logo,
+.logo * {
+  font-family: var(--app-font) !important;
+}
+
+/* Buttons */
+button,
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-login,
+.btn-register {
+  font-family: var(--app-font) !important;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--app-font) !important;
+}
+
+/* Text elements */
+p, span, div, a {
+  font-family: var(--app-font) !important;
+}
+
+/* Form elements */
+input, select, textarea, label {
+  font-family: var(--app-font) !important;
+}
