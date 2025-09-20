@@ -1,66 +1,42 @@
 <template>
   <div class="homepage dark-mode">
-    <!-- Header lớn chuyên nghiệp -->
-    <header class="main-header full-header dark">
-      <div class="header-container">
-        <div class="header-left">
-          <router-link to="/home" class="logo">🎬 DEV CINEMA</router-link>
+    <nav class="main-header-bar">
+      <!-- <ul class="main-header-menu">
+        <li><a href="/lich-chieu">Lịch chiếu</a></li>
+        <li><a href="/khuyen-mai">Khuyến mãi</a></li>
+        <li><a href="/gia-ve">Giá vé</a></li>
+        <li><a href="/gioi-thieu">Giới thiệu</a></li>
+      </ul> -->
+    </nav>
+    <Header 
+      :user-info="userInfo"
+      :is-logged-in="isLoggedIn"
+      @show-auth-modal="handleShowAuthModal"
+      @logout-success="handleLogoutSuccess"
+    />
+    <!-- Banner carousel với phim đang chiếu -->
+    <BannerCarousel />
+    <!-- Quick Booking Bar -->
+    <section class="quick-booking">
+      <div class="qb-container">
+        <div class="qb-item">
+          <label>Chọn rạp</label>
+          <select v-model="qbBranchId">
+            <option value="">Tất cả rạp</option>
+            <option v-for="b in branches" :key="b.id || b.idRap || b.maRap" :value="b.id || b.idRap || b.maRap">
+              {{ b.tenRapChieu || b.tenRap || b.ten || b.name }}
+            </option>
+          </select>
         </div>
-        <nav class="header-menu">
-          <router-link to="/" class="menu-link" exact-active-class="active">Trang chủ</router-link>
-          <router-link to="/showtimes" class="menu-link" active-class="active">Lịch chiếu</router-link>
-          <router-link to="/news" class="menu-link" active-class="active">Tin tức</router-link>
-          <router-link to="/promotions" class="menu-link" active-class="active">Khuyến mãi</router-link>
-          <router-link to="/prices" class="menu-link" active-class="active">Giá vé</router-link>
-          <router-link to="/about" class="menu-link" active-class="active">Giới thiệu</router-link>
-          <router-link to="/contact" class="menu-link" active-class="active">Liên hệ</router-link>
-        </nav>
-        <div class="header-right">
-          <span class="hotline">Hotline: <a href="tel:0123456789">0123 456 789</a></span>
-          <div class="header-socials">
-            <a href="https://facebook.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Facebook_Logo_2023.png" class="header-social-icon" /></a>
-            <a href="https://instagram.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" class="header-social-icon" /></a>
-            <a href="https://tiktok.com" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Tiktok-logo.png" class="header-social-icon" /></a>
-          </div>
-          <!-- User Menu -->
-          <div class="user-menu" v-if="isLoggedIn">
-            <div class="user-info">
-              <span class="user-name">{{ userInfo.username }}</span>
-              <button class="logout-btn" @click="handleLogout">
-                <span class="logout-icon">🚪</span>
-                Đăng xuất
-              </button>
-            </div>
-          </div>
-          <div class="user-menu" v-else>
-            <router-link to="/login" class="login-btn">
-              <span class="login-icon">👤</span>
-              Đăng nhập
-            </router-link>
-          </div>
+        <div class="qb-item">
+          <label>Ngày</label>
+          <input type="date" v-model="qbDate" />
         </div>
-      </div>
-    </header>
-
-    <!-- Banner lớn với slider phim hot -->
-    <section class="hero-banner dark">
-      <div class="banner-slider">
-        <transition-group name="fade" tag="div">
-          <div v-for="(movie, idx) in hotMovies" :key="movie.id" v-show="idx === bannerIndex" class="banner-slide active">
-            <img :src="movie.poster" class="banner-img" />
-            <div class="banner-overlay-gradient"></div>
-            <div class="banner-content">
-              <h1 class="banner-title">{{ movie.title }}</h1>
-              <p class="banner-slogan">{{ movie.genre }}</p>
-              <button class="btn-primary big" @click="goToBooking">Đặt vé ngay</button>
-            </div>
-          </div>
-        </transition-group>
-        <button class="banner-nav left" @click="prevBanner">‹</button>
-        <button class="banner-nav right" @click="nextBanner">›</button>
+        <div class="qb-actions">
+          <button class="qb-cta" @click="goQuickBooking">Đặt vé ngay</button>
+        </div>
       </div>
     </section>
-
     <!-- Tabs phim lớn -->
     <section class="movie-section dark">
       <div class="movie-tabs-large">
@@ -77,56 +53,61 @@
       <div v-else-if="errorMovies" class="movie-error">{{ errorMovies }}</div>
       <div v-else class="movie-grid-mockup">
         <div v-for="movie in moviesToShow" :key="movie.idPhim || movie.id" class="movie-card-mockup dark">
-          <div class="movie-poster-wrap-mockup" @click="openMovieModal(movie)" style="cursor:pointer;">
-            <img :src="getPosterUrl(movie.posterUrl)" :alt="movie.tenPhim" class="movie-poster-mockup" />
+          <div class="movie-poster-wrap-mockup" @click="goToMovieDetail(movie)" style="cursor:pointer;">
+            <img 
+              :src="getPosterUrl(movie.posterUrl)" 
+              :alt="movie.tenPhim" 
+              class="movie-poster-mockup" 
+              @error="handleImageError($event, 'poster')"
+            />
             <div class="badge-age-mockup" :style="{background: getAgeBadge(movie).color}">{{ getAgeBadge(movie).text }}</div>
             <div v-if="movie.isHot" class="badge-hot-mockup">HOT</div>
           </div>
           <div class="movie-info-mockup">
             <div class="movie-title-mockup">{{ movie.tenPhim }}</div>
             <div class="movie-meta-mockup">Thể loại: {{ movie.theLoai ? movie.theLoai.join(', ') : '-' }}</div>
-            <div class="movie-meta-mockup">Ngày khởi chiếu: {{ movie.ngayPhatHanh || '-' }}</div>
-            <div class="movie-meta-mockup movie-duration-mobile-hide">Thời lượng: {{ movie.thoiLuong ? movie.thoiLuong + ' phút' : '-' }}</div>
-            <button class="btn-buy-mockup" @click="goToBooking">
+            <!-- Chỉ hiển thị ngày khởi chiếu cho phim sắp chiếu -->
+            <div v-if="tab === 'comingSoon'" class="movie-meta-mockup">Ngày khởi chiếu: {{ movie.ngayPhatHanh || '-' }}</div>
+            <button class="btn-buy-mockup" @click="goToBooking(movie)">
               <span class="icon-ticket">🎟️</span> MUA VÉ
             </button>
           </div>
         </div>
       </div>
     </section>
+    
+    <!-- Trailer Spotlight -->
+    <TrailerSpotlight />
+    
+    <CinemaLocator />
+    <!-- Promo strip -->
+    <section class="promo-strip">
+      <div class="promo-container">
+        <div class="promo-card">
+          <div class="promo-title">Giảm 20% combo bắp + nước</div>
+          <div class="promo-sub">Áp dụng cuối tuần</div>
+        </div>
+        <div class="promo-card">
+          <div class="promo-title">Mua 2 vé tặng 1 vé</div>
+          <div class="promo-sub">Thứ 4 vui vẻ</div>
+        </div>
+        <div class="promo-card">
+          <div class="promo-title">Ví MoMo hoàn tiền 10%</div>
+          <div class="promo-sub">Tối đa 30K</div>
+        </div>
+      </div>
+    </section>
 
-    <!-- Footer -->
-    <footer class="footer dark">
-      <div class="footer-content">
-        <div class="footer-col brand">
-          <img src="/vite.svg" alt="DEV CINEMA" class="footer-logo" />
-          <div class="footer-title">DEV CINEMA</div>
-          <div class="footer-slogan">Trải nghiệm điện ảnh đỉnh cao, đặt vé siêu tốc!</div>
-        </div>
-        <div class="footer-col">
-          <div class="footer-title">Liên kết nhanh</div>
-          <a href="/">Trang chủ</a>
-          <a href="/showtimes">Lịch chiếu</a>
-          <a href="/news">Tin tức</a>
-          <a href="/promotions">Khuyến mãi</a>
-          <a href="/contact">Liên hệ</a>
-        </div>
-        <div class="footer-col">
-          <div class="footer-title">Liên hệ</div>
-          <div>Hotline: <a href="tel:0123456789">0123 456 789</a></div>
-          <div>Email: <a href="mailto:devcinema@gmail.com">devcinema@gmail.com</a></div>
-          <div class="footer-socials">
-            <a href="https://facebook.com" target="_blank" class="footer-social-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Facebook_Logo_2023.png" alt="Facebook" style="width:20px;height:20px;" /></a>
-            <a href="https://instagram.com" target="_blank" class="footer-social-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" style="width:20px;height:20px;" /></a>
-            <a href="https://tiktok.com" target="_blank" class="footer-social-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6f/Tiktok-logo.png" alt="TikTok" style="width:20px;height:20px;" /></a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-copy">
-        © 2024 DEV CINEMA. All rights reserved. | <router-link to="/terms">Điều khoản</router-link> | <router-link to="/privacy">Chính sách bảo mật</router-link>
-      </div>
-    </footer>
-    <MovieDetailModal :movie="selectedMovie" :visible="showModal" @close="closeMovieModal" v-if="selectedMovie" />
+    <HomeFooter />
+    <AIChatWidget />
+    
+    <!-- Auth Modal -->
+    <AuthModal 
+      :show="showAuthModal" 
+      :initial-tab="authModalTab"
+      @close="showAuthModal = false"
+      @login-success="handleLoginSuccess"
+    />
   </div>
 </template>
 
@@ -135,31 +116,21 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchMovies } from '../../services/movieService'
 import { logoutUser } from '../../services/userService'
-import MovieDetailModal from '../../components/MovieDetailModal.vue'
+import Header from '../../components/Header.vue'
+import HomeFooter from '../../components/HomeFooter.vue'
+import BannerCarousel from '../../components/BannerCarousel.vue'
+import AIChatWidget from '../../components/AIChatWidget.vue'
+import CinemaLocator from '../../components/CinemaLocator.vue'
+import TrailerSpotlight from '../../components/TrailerSpotlight.vue'
+import AuthModal from '../../components/AuthModal.vue'
+import { fetchBranches } from '../../services/branchService'
 
-const hotMovies = [
-  { id: 1, title: 'Avengers: Endgame', genre: 'Hành động, Viễn tưởng', poster: 'https://image.tmdb.org/t/p/w500/ulzhLuWrPK07P1YkdWQLZnQh1JL.jpg', isHot: true },
-  { id: 2, title: 'Dune: Part Two', genre: 'Phiêu lưu, Khoa học viễn tưởng', poster: 'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg', isHot: true },
-  { id: 3, title: 'Godzilla x Kong', genre: 'Hành động, Quái vật', poster: 'https://image.tmdb.org/t/p/w500/2vFuG6bWGyQUzYS9d69E5l85nIz.jpg', isHot: true },
-]
-const hoveredMovie = ref(null)
-const bannerIndex = ref(0)
-let bannerTimer = null
-function nextBanner() {
-  bannerIndex.value = (bannerIndex.value + 1) % hotMovies.length
-}
-function prevBanner() {
-  bannerIndex.value = (bannerIndex.value - 1 + hotMovies.length) % hotMovies.length
-}
-function startBannerAuto() {
-  bannerTimer = setInterval(nextBanner, 4000)
-}
-function stopBannerAuto() {
-  if (bannerTimer) clearInterval(bannerTimer)
-}
-onMounted(() => { startBannerAuto() })
 
 const router = useRouter()
+
+// Auth Modal
+const showAuthModal = ref(false)
+const authModalTab = ref('login')
 
 // User authentication state
 const isLoggedIn = ref(false)
@@ -201,35 +172,107 @@ async function handleLogout() {
   }
 }
 
-function goToBooking() {
-  router.push('/booking')
+function goToBooking(movie) {
+  const movieId = movie?.id || movie?.idPhim
+  if (movieId) {
+    router.push({ path: '/booking', query: { movieId: String(movieId) } })
+  } else {
+    router.push('/booking')
+  }
 }
 
 const movies = ref([])
 const loadingMovies = ref(true)
 const errorMovies = ref('')
-onMounted(async () => {
+// Hàm load movies
+async function loadMovies() {
   loadingMovies.value = true
   try {
     const res = await fetchMovies()
-    movies.value = res.data
-    errorMovies.value = ''
+    const list = res?.data?.content ?? res?.data ?? []
+    movies.value = Array.isArray(list) ? list : []
+    console.debug('[HomePage] Fetched movies:', { count: movies.value.length, sample: movies.value[0] })
+    errorMovies.value = movies.value.length ? '' : 'Không có phim để hiển thị.'
   } catch (e) {
     errorMovies.value = 'Không thể tải danh sách phim.'
   } finally {
     loadingMovies.value = false
   }
+}
+
+onMounted(async () => {
+  await loadMovies()
+  await loadBranches()
+  
+  // Lắng nghe sự kiện khi có thay đổi phim từ admin
+  window.addEventListener('moviesUpdated', async () => {
+    console.log('🔄 Phát hiện thay đổi phim, đang refresh dữ liệu...')
+    await loadMovies()
+  })
+  
+  // Kiểm tra localStorage để refresh nếu cần
+  const lastUpdate = localStorage.getItem('moviesUpdated')
+  if (lastUpdate) {
+    const now = Date.now()
+    const timeDiff = now - parseInt(lastUpdate)
+    // Nếu thời gian cập nhật gần đây (trong vòng 5 phút), refresh dữ liệu
+    if (timeDiff < 5 * 60 * 1000) {
+      console.log('🔄 Phát hiện cập nhật gần đây, đang refresh dữ liệu...')
+      await loadMovies()
+    }
+  }
 })
-const nowShowing = computed(() => movies.value.filter(m => {
-  if (!m.status) return true;
-  const s = m.status.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-  return s.includes('dang chieu');
-}))
-const comingSoon = computed(() => movies.value.filter(m => {
-  if (!m.status) return true;
-  const s = m.status.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
-  return s.includes('sap chieu');
-}))
+const DEFAULT_SHOWING_DAYS = 30
+
+function isTodayOrFuture(dateStr) {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return false
+  const today = new Date()
+  today.setHours(0,0,0,0)
+  d.setHours(0,0,0,0)
+  return d.getTime() >= today.getTime()
+}
+
+function isVisibleOnHome(movie) {
+  // Ẩn phim đã ngừng chiếu: ngày phát hành < hôm nay hoặc trạng thái NGUNG_CHIEU
+  if (movie?.trangThai === 'NGUNG_CHIEU') return false
+  const release = movie?.ngayPhatHanh
+  if (!release) return false
+  const releaseDate = new Date(release)
+  if (isNaN(releaseDate.getTime())) return false
+  const today = new Date(); today.setHours(0,0,0,0)
+  releaseDate.setHours(0,0,0,0)
+  // Nếu chưa đến ngày phát hành -> vẫn hiển thị ở tab Sắp chiếu
+  if (releaseDate.getTime() > today.getTime()) return true
+  // Trong cửa sổ chiếu (mặc định 30 ngày) -> hiển thị ở Đang chiếu
+  const endDate = new Date(releaseDate)
+  endDate.setDate(endDate.getDate() + DEFAULT_SHOWING_DAYS)
+  return today.getTime() <= endDate.getTime()
+}
+
+const visibleMovies = computed(() => movies.value.filter(m => isVisibleOnHome(m)))
+const nowShowing = computed(() => {
+  const today = new Date(); today.setHours(0,0,0,0)
+  const result = visibleMovies.value.filter(m => {
+    const d = new Date(m.ngayPhatHanh); d.setHours(0,0,0,0)
+    const end = new Date(d); end.setDate(end.getDate() + DEFAULT_SHOWING_DAYS)
+    return d.getTime() <= today.getTime() && today.getTime() <= end.getTime()
+  })
+  
+  console.log('HomePage - Total movies:', movies.value.length)
+  console.log('HomePage - Visible movies:', visibleMovies.value.length)
+  console.log('HomePage - Now showing:', result.length)
+  
+  return result
+})
+const comingSoon = computed(() => {
+  const today = new Date(); today.setHours(0,0,0,0)
+  return visibleMovies.value.filter(m => {
+    const d = new Date(m.ngayPhatHanh); d.setHours(0,0,0,0)
+    return d.getTime() > today.getTime()
+  })
+})
 const specialShow = computed(() => movies.value.filter(m => {
   if (!m.status) return false;
   const s = m.status.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
@@ -246,34 +289,218 @@ function getAgeBadge(movie) {
 const movieTabs = [
   { key: 'nowShowing', label: 'PHIM ĐANG CHIẾU' },
   { key: 'comingSoon', label: 'PHIM SẮP CHIẾU' },
-  { key: 'specialShow', label: 'SUẤT ĐẶC BIỆT' },
 ]
 const tab = ref('nowShowing')
 const moviesToShow = computed(() => {
   if (tab.value === 'nowShowing') return nowShowing.value
   if (tab.value === 'comingSoon') return comingSoon.value
-  if (tab.value === 'specialShow') return specialShow.value
   return []
 })
 
+
+import { API_BASE_URL } from '../../services/api'
+
 function getPosterUrl(url) {
-  if (!url) return '';
+  if (!url) return '/logo.png?v=2'; // Fallback image
   if (url.startsWith('http')) return url;
-  return 'http://localhost:8080' + url;
+  if (url.startsWith('/')) return url; // Public assets
+  return API_BASE_URL + url;
 }
 
-const selectedMovie = ref(null)
-const showModal = ref(false)
-function openMovieModal(movie) {
-  selectedMovie.value = movie
-  showModal.value = true
+function handleImageError(event, type = 'poster') {
+  console.error(`❌ [Image Load Error] Không tải được ${type} tại: ${event.target.src}`)
+  event.target.src = '/logo.png?v=2' // Fallback image
+  event.target.classList.add('image-error')
 }
-function closeMovieModal() {
-  showModal.value = false
+
+function goToMovieDetail(movie) {
+  router.push(`/movie/${movie.idPhim}`)
 }
+
+// Auth Modal functions
+function handleShowAuthModal(tab) {
+  authModalTab.value = tab
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  // Set default avatar if user doesn't have one
+  const userWithAvatar = {
+    ...userData,
+    avatar: userData.avatar || '/logo.png?v=2' // Default avatar
+  }
+  
+  isLoggedIn.value = true
+  userInfo.value = userWithAvatar
+  
+  // Update localStorage with avatar
+  localStorage.setItem('userInfo', JSON.stringify(userWithAvatar))
+  
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+  console.log('User logged out successfully')
+}
+
+// Quick booking & nearby
+const branches = ref([])
+const qbBranchId = ref('')
+const qbDate = ref(new Date().toISOString().slice(0,10))
+
+async function loadBranches() {
+  try {
+    const res = await fetchBranches()
+    const list = Array.isArray(res?.data) ? res.data : (res?.data?.content || [])
+    branches.value = list
+  } catch (_) {
+    branches.value = []
+  }
+}
+
+function goQuickBooking() {
+  // Check if user is logged in
+  if (!isLoggedIn.value) {
+    handleShowAuthModal('login')
+    return
+  }
+  
+  const query = {}
+  if (qbBranchId.value) query.branchId = qbBranchId.value
+  if (qbDate.value) query.date = qbDate.value
+  router.push({ path: '/showtimes', query })
+}
+
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&display=swap');
+.header,
+.main-header,
+.main-header.full-header.dark,
+.header-container {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute !important;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  color: #fff;
+}
+.hero-banner, .hero-banner.dark {
+  width: 100vw;
+  min-height: 520px;
+  position: relative;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: url('https://bazaarvietnam.vn/wp-content/uploads/2023/09/van-chi-vu-cua-ngu-thu-han-va-truong-lang-hach-bat-ngo-len-song-9-1536x864.jpg') center center/cover no-repeat;
+}
+.homepage.dark-mode {
+  background: none !important;
+}
+.home-banner {
+  width: 100vw;
+  min-height: 420px;
+  background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding-bottom: 32px;
+}
+.banner-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 100px;
+  width: 100%;
+}
+.banner-left {
+  flex: 1;
+  color: #fff;
+  z-index: 2;
+}
+.banner-title {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 18px;
+  color: #fff;
+  text-shadow: 0 2px 12px #000a;
+}
+.banner-slogan {
+  font-size: 1.3rem;
+  color: #b6ff00;
+  margin-bottom: 24px;
+  text-shadow: 0 2px 8px #0006;
+}
+.banner-buttons {
+  display: flex;
+  gap: 18px;
+}
+.btn-primary {
+  background: linear-gradient(90deg, #b6ff00 0%, #48dbfb 100%);
+  color: #232526;
+  border-radius: 24px;
+  font-weight: 800;
+  font-size: 18px;
+  padding: 12px 32px;
+  border: none;
+  box-shadow: 0 2px 12px #48dbfb33;
+  transition: background 0.3s, color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg, #48dbfb 0%, #b6ff00 100%);
+  color: #fff;
+  transform: scale(1.05);
+}
+.btn-secondary {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 12px 32px;
+  border: 1.5px solid #48dbfb;
+  box-shadow: 0 2px 12px #48dbfb22;
+  transition: background 0.3s, color 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: #48dbfb;
+  color: #232526;
+  transform: scale(1.05);
+}
+.banner-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.banner-img {
+  width: 380px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px #0006;
+}
+::v-deep .header {
+  position: absolute !important;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  background: transparent !important;
+  color: #fff;
+  box-shadow: none !important;
+}
 .homepage.dark-mode {
   min-height: 100vh;
   display: flex;
@@ -282,20 +509,33 @@ function closeMovieModal() {
   color: #fff;
   width: 100%;
   box-sizing: border-box;
-  padding-left: 16px;
-  padding-right: 16px;
 }
 
+/* Quick Booking */
+.quick-booking { background: #1f2123; border-top: 1px solid #ffffff0f; border-bottom: 1px solid #ffffff0f; }
+.qb-container { max-width: 1200px; margin: 0 auto; padding: 16px; display: flex; gap: 12px; align-items: end; }
+.qb-item { display: flex; flex-direction: column; gap: 6px; }
+.qb-item label { color: #b2bec3; font-size: 13px; }
+.qb-item select, .qb-item input[type="date"] { background: #2b2d31; color: #fff; border: 1px solid #ffffff22; border-radius: 10px; padding: 10px 12px; outline: none; }
+.qb-actions { margin-left: auto; }
+.qb-cta { background: linear-gradient(135deg, #48dbfb, #667eea); color:#fff; border:none; border-radius:10px; padding: 12px 18px; font-weight:800; cursor:pointer; box-shadow:0 2px 8px rgba(72,219,251,0.15); }
+.qb-cta:hover { transform: translateY(-2px); }
+
+/* Promo strip */
+.promo-strip { background: #18191a; border-top: 1px solid #ffffff0f; }
+.promo-container { max-width: 1200px; margin: 0 auto; padding: 18px 16px; display:flex; gap:12px; }
+.promo-card { flex:1; background: linear-gradient(135deg, #232526, #1f2123); border:1px solid #ffffff12; border-radius:12px; padding:14px; box-shadow: 0 2px 12px rgba(0,0,0,0.25); }
+.promo-title { color:#fff; font-weight:900; }
+.promo-sub { color:#b2bec3; font-size:13px; }
+
+
 @media (min-width: 900px) {
-  .homepage.dark-mode {
-    padding-left: 40px;
-    padding-right: 40px;
-  }
 }
 
 .main-header.dark {
   background: #18191a;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .header-content {
   max-width: 1200px;
@@ -352,15 +592,15 @@ function closeMovieModal() {
 }
 .hero-banner.dark {
   width: 100%;
-  margin: 0 auto 32px auto;
+  margin: 0 0 32px 0;
   position: relative;
   min-height: 520px;
 }
 .banner-slider {
   position: relative;
   width: 100%;
-  height: 600px;
-  max-height: 80vh;
+  height: 800px;
+  max-height: 95vh;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -404,7 +644,7 @@ function closeMovieModal() {
   padding: 0 24px;
 }
 .banner-title {
-  font-size: 52px;
+  font-size: 32px;
   font-weight: 900;
   margin-bottom: 16px;
   letter-spacing: 2.5px;
@@ -460,7 +700,7 @@ function closeMovieModal() {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 .movie-section.dark {
-  background: transparent;
+  background: linear-gradient(135deg, #232526 0%, #1c1c1c 100%) !important;
   margin: 0 auto 32px auto;
   max-width: 1200px;
   padding: 0 16px;
@@ -639,26 +879,67 @@ function closeMovieModal() {
   gap: 10px;
 }
 .footer-col.brand {
-  align-items: flex-start;
+  align-items: center;
 }
 .footer-logo {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(72,219,251,0.15);
-}
-.footer-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: #48dbfb;
-  letter-spacing: 1px;
+  height: 56px;
+  width: auto;
+  display: block;
+  margin-bottom: 0;
+  filter: drop-shadow(0 2px 8px #feca57cc);
 }
 .footer-slogan {
-  font-size: 15px;
-  color: #feca57;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.footer-cert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 8px;
+}
+.cert-img {
+  height: 48px;
+  width: auto;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+}
+.cert-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  color: #2196f3;
+  font-weight: 700;
+  text-align: left;
+}
+.cert-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #2196f3;
+}
+.cert-sub {
+  font-size: 13px;
+  color: #2196f3;
+}
+.footer-col.contact {
+  min-width: 260px;
+}
+.company-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: #232946;
+  margin: 8px 0 4px 0;
+  text-transform: uppercase;
+}
+.company-info {
+  font-size: 14px;
+  color: #232946;
+  margin-bottom: 8px;
+  line-height: 1.6;
 }
 .footer-col a {
   color: #b2bec3;
@@ -736,6 +1017,7 @@ function closeMovieModal() {
   letter-spacing: 2px;
   display: flex;
   align-items: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .header-menu {
   display: flex;
@@ -751,6 +1033,7 @@ function closeMovieModal() {
   transition: color 0.2s, border-bottom 0.2s;
   border-bottom: 2px solid transparent;
   letter-spacing: 0.5px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .menu-link.active, .menu-link:hover {
   color: #48dbfb;
@@ -803,6 +1086,8 @@ function closeMovieModal() {
   grid-template-columns: repeat(4, 1fr);
   gap: 72px 56px;
   padding: 0 40px;
+  /* Lùi xuống dưới một chút */
+  margin-top: 32px;
 }
 
 .movie-card-mockup.dark {
@@ -850,6 +1135,12 @@ function closeMovieModal() {
 .movie-card-mockup.dark:hover .movie-poster-mockup {
   transform: scale(1.06);
   box-shadow: 0 8px 32px rgba(72,219,251,0.18);
+}
+
+.image-error {
+  opacity: 0.6;
+  filter: grayscale(50%);
+  border: 2px dashed #e74c3c;
 }
 .badge-age-mockup {
   position: absolute;
@@ -941,40 +1232,362 @@ function closeMovieModal() {
 
 .movie-tabs-large {
   display: flex;
-  gap: 32px;
+  gap: 14px;
   justify-content: center;
-  margin-bottom: 32px;
-  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 14px;
+  border-bottom: none;
   background: transparent;
+  flex-wrap: nowrap;
+  /* Lùi xuống dưới một chút */
+  margin-top: 32px;
 }
 .movie-tab-large {
   background: none;
   border: none;
   color: #fff;
-  font-size: 2.1rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  padding: 18px 32px 12px 32px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 12px 4px 12px;
   text-transform: uppercase;
   cursor: pointer;
   transition: color 0.2s;
   position: relative;
   outline: none;
+  margin: 0;
+  white-space: nowrap;
 }
 .movie-tab-large.active {
   color: #48dbfb;
 }
 .movie-tab-large.active::after {
-  content: '';
+  display: none !important;
+}
+.footer-content-custom {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px;
+  padding: 32px 24px 0 24px;
+  background: linear-gradient(90deg, #232526 0%, #1c1c1c 100%);
+  border-radius: 0 0 18px 18px;
+}
+.footer-col-custom {
+  flex: 1 1 220px;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  color: #e3eaf2;
+  font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.footer-col-custom.logo-col {
+  align-items: center;
+  justify-content: flex-start;
+}
+.footer-logo-custom {
+  height: 72px;
+  width: auto;
   display: block;
-  height: 4px;
+  margin: 0 auto 10px auto;
+  filter: drop-shadow(0 6px 24px #48dbfbcc) drop-shadow(0 2px 8px #feca57cc);
+}
+.company-name {
+  font-size: 17px;
+  font-weight: 900;
+  color: #48dbfb;
+  margin: 8px 0 4px 0;
+  text-transform: uppercase;
+  text-align: center;
   width: 100%;
-  background: linear-gradient(90deg, #1976d2 0%, #48dbfb 100%);
-  border-radius: 2px;
+}
+.footer-title-custom {
+  font-size: 20px;
+  font-weight: 800;
+  color: #48dbfb;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.footer-menu-link {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  margin: 6px 0;
+  display: block;
+  transition: color 0.2s;
+  font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.footer-menu-link:hover {
+  color: #48dbfb;
+  text-decoration: underline;
+}
+.footer-social-icons {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+.footer-social-link img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(72,219,251,0.10);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.footer-social-link img:hover {
+  transform: scale(1.12) rotate(-6deg);
+  box-shadow: 0 4px 16px #48dbfb44;
+}
+.footer-cert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.cert-img {
+  height: 44px;
+  width: auto;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+}
+.cert-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  color: #2196f3;
+  font-weight: 700;
+  text-align: left;
+}
+.cert-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #2196f3;
+}
+.cert-sub {
+  font-size: 13px;
+  color: #2196f3;
+}
+.footer-col-custom.contact {
+  align-items: flex-start;
+}
+.company-info {
+  font-size: 14px;
+  color: #e3eaf2;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.footer-copyright-custom {
+  text-align: center;
+  color: #b2bec3;
+  font-size: 14px;
+  margin-top: 24px;
+  letter-spacing: 1px;
+  font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+@media (max-width: 1100px) {
+  .footer-content-custom {
+    gap: 18px;
+    padding: 24px 8px 0 8px;
+  }
+}
+@media (max-width: 900px) {
+  .footer-content-custom {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 24px 8px 0 8px;
+  }
+  .footer-col-custom {
+    min-width: 160px;
+    width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+  .footer-col-custom.contact {
+    align-items: center;
+    text-align: center;
+  }
+  .footer-col-custom.menu {
+    align-items: center;
+    text-align: center;
+  }
+}
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  color: #fff;
+  border: none;
+  font-size: 4.5em;
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  z-index: 4;
+  transition: color 0.2s, background 0.2s;
+  outline: none;
+  box-shadow: none;
+}
+.banner-arrow.left { left: 40px; }
+.banner-arrow.right { right: 40px; }
+
+.banner-content-modern {
+  position: absolute;
+  top: 30%;
+  left: 5%;
+  z-index: 3;
+  text-align: left;
+  color: #fff;
+  max-width: 600px;
+  padding: 32px 32px 32px 32px;
+  background: rgba(0,0,0,0.28);
+  border-radius: 18px;
+  box-shadow: 0 4px 32px #0006;
+}
+.banner-title-modern {
+  font-family: 'Barlow Condensed', 'Montserrat', Arial, sans-serif;
+  font-size: 3.2rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 6px 32px #000a, 0 1px 0 #fff, 0 0 8px #48dbfb;
+  margin-bottom: 12px;
+}
+.banner-slogan-modern {
+  font-size: 1.5rem;
+  color: #feca57;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-shadow: 0 2px 12px #000a;
+}
+.banner-btn-modern {
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 14px 38px;
+  border-radius: 24px;
+  background: linear-gradient(90deg, #b6ff00 0%, #48dbfb 100%);
+  color: #232526;
+  border: none;
+  box-shadow: 0 2px 12px #48dbfb33;
+  cursor: pointer;
+  transition: background 0.3s, color 0.2s, transform 0.2s;
+}
+.banner-btn-modern:hover {
+  background: linear-gradient(90deg, #48dbfb 0%, #b6ff00 100%);
+  color: #fff;
+  transform: scale(1.05);
+}
+.banner-poster-reflect {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  z-index: 2;
+}
+.banner-poster-reflect .banner-img {
+  display: block;
+  width: 100%;
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 4px 32px #0006;
+}
+.banner-poster-reflect .reflection {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+  margin-top: -8px;
+  transform: scaleY(-1);
+  opacity: 0.22;
+  filter: blur(2.5px);
+  border-radius: 0 0 24px 24px;
+  pointer-events: none;
+  z-index: 1;
+}
+.thumb-carousel {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 32px;
+  margin: 0;
+  padding-bottom: 24px;
+  background: rgba(24,25,26,0.55);
   position: absolute;
   left: 0;
-  bottom: -2px;
-  transition: width 0.3s;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  pointer-events: none;
+  backdrop-filter: blur(16px) saturate(1.2);
+  border-radius: 0 0 32px 32px;
+  box-shadow: 0 8px 48px #000a;
+}
+.thumb-poster-reflect {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 220px;
+  margin: 0 16px;
+  pointer-events: auto;
+  border-radius: 28px;
+  transition: transform 0.22s, box-shadow 0.22s, border 0.22s;
+}
+.thumb-poster-reflect:hover .thumb-img {
+  transform: scale(1.08);
+  box-shadow: 0 8px 32px #48dbfbcc, 0 0 24px #fff, 0 2px 12px #fff8;
+  border: 3px solid #fff;
+  filter: drop-shadow(0 0 12px #48dbfbcc);
+  z-index: 2;
+}
+.thumb-poster-reflect.active .thumb-img {
+  border: none;
+  outline: none;
+  box-shadow: none;
+  filter: none;
+  transform: scale(1.12);
+  z-index: 3;
+  border-radius: 28px;
+  transition: all 0.25s;
+  background: rgba(30,30,30,0.45);
+  backdrop-filter: blur(8px);
+}
+.thumb-img {
+  width: 100%;
+  border-radius: 28px;
+  box-shadow: 0 4px 24px #0006;
+  transition: transform 0.22s, box-shadow 0.22s, border 0.22s;
+}
+.thumb-reflection {
+  width: 100%;
+  height: 40px;
+  object-fit: cover;
+  margin-top: -8px;
+  transform: scaleY(-1);
+  opacity: 0.22;
+  filter: blur(2.5px);
+  border-radius: 0 0 18px 18px;
+  pointer-events: none;
+}
+
+/* Hiệu ứng chuyển động cho poster nhỏ */
+.thumb-fade-slide-enter-active, .thumb-fade-slide-leave-active {
+  transition: all 0.35s cubic-bezier(.4,1.3,.6,1);
+}
+.thumb-fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(40px) scale(0.92);
+}
+.thumb-fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-40px) scale(0.92);
 }
 </style>
 
@@ -982,6 +1595,7 @@ function closeMovieModal() {
 html {
   overflow-y: scroll !important;
   height: 100%;
+  background: #18191a !important;
 }
 
 body {
@@ -990,6 +1604,7 @@ body {
   padding: 0;
   min-height: 100vh;
   height: auto;
+  background: #18191a !important;
 }
 
 #app {

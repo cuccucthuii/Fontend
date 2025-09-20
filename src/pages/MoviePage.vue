@@ -10,14 +10,18 @@
         <p class="page-subtitle">Quản lý và theo dõi tất cả phim trong hệ thống</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-primary" @click="onAddPost">
+        <router-link to="/admin/movies/add" class="btn btn-primary">
           <span class="btn-icon">➕</span>
           <span class="btn-text">Thêm Phim</span>
-        </button>
-        <button class="btn btn-secondary" @click="onOpenTrash">
+        </router-link>
+        <router-link to="/admin/genres" class="btn btn-secondary">
+          <span class="btn-icon">🏷️</span>
+          <span class="btn-text">Thể loại</span>
+        </router-link>
+        <router-link to="/admin/movies/trash" class="btn btn-secondary">
           <span class="btn-icon">🗑️</span>
           <span class="btn-text">Thùng rác</span>
-        </button>
+        </router-link>
       </div>
     </div>
 
@@ -153,8 +157,12 @@
               <th class="th-status">Trạng thái</th>
               <th class="th-format">Định dạng</th>
               <th class="th-created">Ngày tạo</th>
+              <th class="th-age">Tuổi giới hạn</th>
+              <th class="th-year">Năm sản xuất</th>
+              <th class="th-popularity">Độ phổ biến</th>
+              <th class="th-price">Giá vé cơ bản</th>
               <th class="th-director">Đạo diễn</th>
-              <th class="th-actors">Diễn viên</th>
+              <th class="th-actors">Diễn viên chính</th>
               <th class="th-category">Thể loại</th>
               <th class="th-poster">Poster</th>
               <th class="th-banner">Banner</th>
@@ -191,6 +199,23 @@
               <td class="td-format">{{ movie.dinhDang }}</td>
               <td class="td-created">{{ formatDate(movie.ngayTao) }}</td>
               
+              <td class="td-age">
+                <span class="age-badge">{{ field(movie, 'tuoiGioiHan', 'tuoi_gioi_han') ? field(movie, 'tuoiGioiHan', 'tuoi_gioi_han') + '+' : '-' }}</span>
+              </td>
+              
+              <td class="td-year">{{ field(movie, 'namSanXuat', 'nam_san_xuat') || '-' }}</td>
+              
+              <td class="td-popularity">
+                <div class="popularity-bar">
+                  <div class="popularity-fill" :style="{ width: (field(movie, 'doPhoBien', 'do_pho_bien') || 0) + '%' }"></div>
+                  <span class="popularity-text">{{ field(movie, 'doPhoBien', 'do_pho_bien') || 0 }}%</span>
+                </div>
+              </td>
+              
+              <td class="td-price">
+                <span class="price-badge">{{ field(movie, 'giaVeCoBan', 'gia_ve_co_ban') != null ? formatPrice(field(movie, 'giaVeCoBan', 'gia_ve_co_ban')) : '-' }}</span>
+              </td>
+              
               <td class="td-director">
                 <div class="text-list">{{ joinNames(movie.daoDien) }}</div>
               </td>
@@ -205,36 +230,36 @@
               
               <td class="td-poster">
                 <div class="image-container">
-              <img
-                v-if="movie.posterUrl"
-                :src="fullImageUrl(movie.posterUrl)"
-                alt="Poster phim"
+                  <img
+                    v-if="field(movie, 'posterUrl', 'poster_url') || field(movie, 'poster', 'posterPath')"
+                    :src="fullImageUrl(field(movie, 'posterUrl', 'poster_url') || field(movie, 'poster', 'posterPath'))"
+                    alt="Poster phim"
                     class="movie-poster"
-                loading="lazy"
-                @error="logImageError(movie.posterUrl)"
-              />
+                    loading="lazy"
+                    @error="handleImageError($event, field(movie, 'posterUrl', 'poster_url') || field(movie, 'poster', 'posterPath'), 'poster')"
+                  />
                   <div v-else class="no-image">📷</div>
                 </div>
-            </td>
+              </td>
 
               <td class="td-banner">
                 <div class="image-container">
-              <img
-                v-if="movie.bannerUrl"
-                :src="fullImageUrl(movie.bannerUrl)"
-                alt="Banner phim"
+                  <img
+                    v-if="field(movie, 'bannerUrl', 'banner_url') || field(movie, 'banner', 'bannerPath')"
+                    :src="fullImageUrl(field(movie, 'bannerUrl', 'banner_url') || field(movie, 'banner', 'bannerPath'))"
+                    alt="Banner phim"
                     class="movie-banner"
-                loading="lazy"
-                @error="logImageError(movie.bannerUrl)"
-              />
+                    loading="lazy"
+                    @error="handleImageError($event, field(movie, 'bannerUrl', 'banner_url') || field(movie, 'banner', 'bannerPath'), 'banner')"
+                  />
                   <div v-else class="no-image">🖼️</div>
                 </div>
-            </td>
+              </td>
               
               <td class="td-trailer">
               <button
-                v-if="movie.trailerUrl"
-                @click="openTrailer(movie.trailerUrl)"
+                v-if="field(movie, 'trailerUrl', 'trailer_url') || field(movie, 'trailer', 'trailerLink')"
+                @click="openTrailer(field(movie, 'trailerUrl', 'trailer_url') || field(movie, 'trailer', 'trailerLink'))"
                   class="trailer-btn"
                   title="Xem trailer"
               >
@@ -246,26 +271,17 @@
 
               <td class="td-actions">
                 <div class="action-buttons">
-                  <label class="status-toggle">
-              <input
-                type="checkbox"
-                v-model="movie.trangThai"
-                true-value="DANG_CHIEU"
-                false-value="NGUNG_CHIEU"
-                      @change="updateMovieStatus(movie)"
-                    />
-                    <span class="toggle-slider"></span>
-                  </label>
-                  
-                  <button class="action-btn edit-btn" @click="onEdit(movie)" title="Chỉnh sửa">
+                  <router-link :to="`/admin/movies/edit/${movie.idPhim}`" class="action-btn edit-btn" title="Chỉnh sửa">
                     <span class="action-icon">✏️</span>
-              </button>
-                  
+                  </router-link>
+                  <router-link :to="`/admin/movies/${movie.idPhim}`" class="action-btn view-btn" title="Xem chi tiết">
+                    <span class="action-icon">👁️</span>
+                  </router-link>
                   <button class="action-btn delete-btn" @click="onDelete(movie)" title="Xóa">
                     <span class="action-icon">❌</span>
-              </button>
+                  </button>
                 </div>
-            </td>
+              </td>
           </tr>
         </tbody>
       </table>
@@ -487,10 +503,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { fetchMovies } from '../services/movieService'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { fetchMovies, deleteMovie, updateMovie, addMovie } from '../services/movieService'
 import TrailerModal from './TrailerModal.vue'
-import AddMovieModal from '../components/AddMovieModal.vue'
+import AddMovieModal from '../external/components/AddMovieModal.vue'
 import * as XLSX from 'xlsx'
 
 const movies = ref([])
@@ -498,7 +514,8 @@ const currentPage = ref(1)
 const pageSize = 7
 const searchQuery = ref('')
 
-const BASE_URL = 'http://localhost:8080'
+import { API_BASE_URL } from '../services/api'
+const BASE_URL = API_BASE_URL
 
 // Modal states
 const showTrailerModal = ref(false)
@@ -646,6 +663,10 @@ async function onSaved() {
   try {
     const response = await fetchMovies()
     movies.value = response.data
+    
+    // Thông báo cho các trang khác biết có thay đổi dữ liệu
+    localStorage.setItem('moviesUpdated', Date.now().toString())
+    window.dispatchEvent(new CustomEvent('moviesUpdated'))
   } catch (error) {
     console.error('❌ [Fetch Error]:', error)
     showToast('❌ Lỗi khi tải dữ liệu!', 'error')
@@ -709,30 +730,96 @@ const formatStatus = (status) => {
 
 const joinNames = (arr) => (Array.isArray(arr) ? arr.join(', ') : '')
 
+// Helper: safely read either camelCase or snake_case from API
+const field = (obj, camel, snake) => {
+  if (!obj) return undefined
+  if (obj[camel] !== undefined && obj[camel] !== null) return obj[camel]
+  return obj[snake]
+}
+
+const formatPrice = (price) => {
+  if (price == null) return ''
+  try {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+  } catch {
+    return `${price} VND`
+  }
+}
+
 const fullImageUrl = (path) => {
-  if (!path) return ''
-  return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`.replace(
-    /([^:]\/)\/+/g,
-    '$1'
-  )
+  if (!path) return '/dev.png'
+  const value = String(path).trim()
+  // absolute URL
+  if (/^https?:\/\//i.test(value)) return value
+  // data URL
+  if (value.startsWith('data:image')) return value
+  // relative uploads path
+  if (value.startsWith('/uploads') || value.startsWith('uploads/')) {
+    return value.startsWith('/uploads') ? `${BASE_URL}${value}` : `${BASE_URL}/${value}`
+  }
+  // public assets
+  if (value.startsWith('/')) return value
+  // default
+  return '/dev.png'
 }
 
 const logImageError = (path) => {
   console.error(`❌ [Image Load Error] Không tải được ảnh tại: ${path}`)
+  // Có thể thêm logic để gửi lỗi về server hoặc analytics
+}
+
+const handleImageError = (event, path, type) => {
+  console.error(`❌ [Image Load Error] Không tải được ${type} tại: ${path}`)
+  
+  // Thay thế bằng ảnh placeholder
+  const target = event.target
+  if (type === 'poster') {
+    target.src = '/dev.png' // Sử dụng ảnh có sẵn trong public
+    target.alt = 'Poster không khả dụng'
+  } else if (type === 'banner') {
+    target.src = '/dev.png' // Sử dụng ảnh có sẵn trong public
+    target.alt = 'Banner không khả dụng'
+  }
+  
+  // Thêm class để style khác
+  target.classList.add('image-error')
 }
 
 const calculateIndex = (index) => (currentPage.value - 1) * pageSize + index + 1
 
 // Lifecycle
 onMounted(async () => {
+  await loadMovies()
+  
+  // Listen for movie updates
+  window.addEventListener('moviesUpdated', loadMovies)
+})
+
+// Cleanup
+onUnmounted(() => {
+  window.removeEventListener('moviesUpdated', loadMovies)
+})
+
+async function loadMovies() {
   try {
+    console.log('🔄 Loading movies...')
     const response = await fetchMovies()
     movies.value = response.data
+    console.log('✅ Movies loaded:', movies.value.length)
+    
+    // Debug: Kiểm tra cấu trúc dữ liệu của phim đầu tiên
+    if (movies.value && movies.value.length > 0) {
+      const firstMovie = movies.value[0]
+      console.log('🔍 First movie structure:', firstMovie)
+      console.log('🔍 Available fields:', Object.keys(firstMovie))
+      console.log('🔍 Poster URL field:', firstMovie.posterUrl)
+      console.log('🔍 Banner URL field:', firstMovie.bannerUrl)
+    }
   } catch (error) {
     console.error('❌ [Fetch Error]:', error)
     showToast('❌ Lỗi khi tải dữ liệu!', 'error')
   }
-})
+}
 
 // Modal actions
 function closeEditModal() {
@@ -756,15 +843,27 @@ function closeEditModal() {
 
 async function submitEditForm() {
   isLoading.value = true
-  setTimeout(() => { // Giả lập API
+  try {
+    await updateMovie(editForm.value.idPhim, editForm.value)
+    
+    // Cập nhật local state
     const idx = movies.value.findIndex(m => m.idPhim === editForm.value.idPhim)
     if (idx !== -1) {
       movies.value[idx] = { ...editForm.value }
-      showToast('🎉 Cập nhật phim thành công!', 'success')
     }
+    
+    showToast('🎉 Cập nhật phim thành công!', 'success')
+    
+    // Thông báo cho các trang khác biết có thay đổi dữ liệu
+    localStorage.setItem('moviesUpdated', Date.now().toString())
+    window.dispatchEvent(new CustomEvent('moviesUpdated'))
+  } catch (error) {
+    console.error('❌ [Update Error]:', error)
+    showToast('❌ Lỗi khi cập nhật phim!', 'error')
+  } finally {
     isLoading.value = false
     closeEditModal()
-  }, 1200)
+  }
 }
 
 function closeDeleteModal() {
@@ -772,14 +871,24 @@ function closeDeleteModal() {
   movieToDelete.value = null
 }
 
-function confirmDeleteMovie() {
+async function confirmDeleteMovie() {
   isLoading.value = true
-  setTimeout(() => { // Giả lập API
+  try {
+    await deleteMovie(movieToDelete.value.idPhim)
+    // Xóa khỏi local state sau khi API thành công
     movies.value = movies.value.filter(m => m.idPhim !== movieToDelete.value.idPhim)
     showToast('🗑️ Xóa phim thành công!', 'success')
+    
+    // Thông báo cho các trang khác biết có thay đổi dữ liệu
+    localStorage.setItem('moviesUpdated', Date.now().toString())
+    window.dispatchEvent(new CustomEvent('moviesUpdated'))
+  } catch (error) {
+    console.error('❌ [Delete Error]:', error)
+    showToast('❌ Lỗi khi xóa phim!', 'error')
+  } finally {
     isLoading.value = false
     closeDeleteModal()
-  }, 1200)
+  }
 }
 
 // Filter functionality
@@ -1108,7 +1217,7 @@ function exportData() {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 1400px;
+  min-width: 1700px;
 }
 
 .data-table th {
@@ -1197,6 +1306,50 @@ function exportData() {
   letter-spacing: 0.5px;
 }
 
+/* Age, Year, Price, Popularity */
+.td-age, .td-year, .td-price { text-align: center; }
+
+.age-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.price-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.td-popularity { min-width: 120px; }
+.popularity-bar {
+  position: relative;
+  background: #e5e7eb;
+  border-radius: 8px;
+  height: 20px;
+  overflow: hidden;
+}
+.popularity-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  transition: width 0.3s ease;
+}
+.popularity-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: #374151;
+}
+
 .status-active {
   background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
   color: white;
@@ -1243,6 +1396,12 @@ function exportData() {
 
 .movie-banner:hover {
   transform: scale(1.1);
+}
+
+.image-error {
+  opacity: 0.6;
+  filter: grayscale(50%);
+  border: 2px dashed #e74c3c;
 }
 
 .no-image {

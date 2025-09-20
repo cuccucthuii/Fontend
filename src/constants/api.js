@@ -1,12 +1,14 @@
 // API Base URL
-export const API_BASE_URL = 'http://localhost:8080'
+export const API_BASE_URL = 'http://localhost:8081'
 
 // Auth endpoints
 export const AUTH_ENDPOINTS = {
   LOGIN: '/api/auth/login',
   REGISTER: '/api/auth/register',
   LOGOUT: '/api/auth/logout',
-  REFRESH_TOKEN: '/api/auth/refresh'
+  REFRESH_TOKEN: '/api/auth/refresh',
+  SEND_OTP: '/api/auth/send-otp',
+  VERIFY_OTP: '/api/auth/verify-otp'
 }
 
 // User endpoints
@@ -20,11 +22,11 @@ export const USER_ENDPOINTS = {
 
 // Movie endpoints
 export const MOVIE_ENDPOINTS = {
-  GET_ALL: '/api/movie/all',
-  GET_BY_ID: '/api/movie',
-  ADD: '/api/movie/add',
-  UPDATE: '/api/movie',
-  DELETE: '/api/movie'
+  GET_ALL: '/api/phim',
+  GET_BY_ID: '/api/phim',
+  ADD: '/api/phim/add',
+  UPDATE: '/api/phim',
+  DELETE: '/api/phim'
 }
 
 // Room endpoints
@@ -45,6 +47,15 @@ export const BRANCH_ENDPOINTS = {
   DELETE: '/api/branch'
 }
 
+// Cinema endpoints (alias for branch)
+export const CINEMA_ENDPOINTS = {
+  GET_ALL: '/api/rap_chieu',
+  GET_BY_ID: '/api/rap_chieu',
+  ADD: '/api/rap_chieu',
+  UPDATE: '/api/rap_chieu',
+  DELETE: '/api/rap_chieu'
+}
+
 // Seat endpoints
 export const SEAT_ENDPOINTS = {
   GET_ALL: '/api/seat/all',
@@ -56,11 +67,21 @@ export const SEAT_ENDPOINTS = {
 
 // Schedule endpoints
 export const SCHEDULE_ENDPOINTS = {
-  GET_ALL: '/api/schedule/all',
-  GET_BY_ID: '/api/schedule',
-  ADD: '/api/schedule/add',
-  UPDATE: '/api/schedule',
-  DELETE: '/api/schedule'
+  GET_ALL: '/api/suat-chieu',
+  GET_BY_ID: '/api/suat-chieu',
+  ADD: '/api/suat-chieu',
+  UPDATE: '/api/suat-chieu',
+  DELETE: '/api/suat-chieu'
+}
+
+// Suất chiếu endpoints (alias for schedule)
+export const SUAT_CHIEU_ENDPOINTS = {
+  GET_ALL: '/api/suat-chieu',
+  GET_BY_ID: '/api/suat-chieu',
+  GET_BY_MOVIE_CINEMA: '/api/suat-chieu/by-movie-cinema',
+  ADD: '/api/suat-chieu',
+  UPDATE: '/api/suat-chieu',
+  DELETE: '/api/suat-chieu'
 }
 
 // Bill endpoints

@@ -6,6 +6,12 @@ import LandingPage from '../pages/LandingPage.vue'
 import DashboardPage from '../pages/DashboardPage.vue'
 import AccountPage from '../pages/AccountPage.vue'
 import MoviePage from '../pages/MoviePage.vue'
+import AddMoviePage from '../pages/AddMoviePage.vue'
+import EditMoviePage from '../pages/EditMoviePage.vue'
+import MovieDetailPage from '../pages/MovieDetailPage.vue'
+import MovieList from '../pages/MovieList.vue'
+import MovieDetailAdmin from '../pages/admin/MovieDetailAdmin.vue'
+import GenreManagementAdmin from '../pages/admin/GenreManagementAdmin.vue'
 import RoomPage from '../pages/RoomPage.vue'
 import BranchPage from '../pages/BranchPage.vue'
 import SchedulePage from '../pages/SchedulePage.vue'
@@ -15,6 +21,7 @@ import InvoicePage from '../pages/InvoicePage.vue'
 import NewsPage from '../pages/USER/NewsPage.vue'
 import TicketPricePage from '../pages/USER/TicketPricePage.vue'
 import ShowtimesPage from '../pages/USER/ShowtimesPage.vue'
+import MovieTrashPage from '../pages/MovieTrashPage.vue'
 import PromotionsPage from '../pages/USER/PromotionsPage.vue'
 import TermsPage from '../pages/TermsPage.vue'
 import PrivacyPage from '../pages/PrivacyPage.vue'
@@ -23,6 +30,8 @@ import FeedbackPage from '../pages/FeedbackPage.vue'
 import AdminAccount from '../pages/AdminAccount.vue'
 import AdminLayout from '../layout/AdminLayout.vue'
 import AdminAddEmployee from '../pages/admin/AdminAddEmployee.vue'
+import WelcomeAdmin from '../pages/admin/WelcomeAdmin.vue'
+import WelcomeEmployee from '../pages/admin/WelcomeEmployee.vue'
 
 // POS Layout & Pages
 import POSLayout from '../layout/POSLayout.vue'
@@ -34,8 +43,8 @@ import PaymentPage from '../pages/POS/PaymentPage.vue'
 const routes = [
   {
     path: '/',
-    name: 'Landing',
-    component: LandingPage
+    name: 'HomeRoot',
+    component: HomePage
   },
   {
     path: '/home',
@@ -64,6 +73,12 @@ const routes = [
     component: ShowtimesPage
   },
   {
+    path: '/movie/:id',
+    name: 'MovieDetail',
+    component: MovieDetailPage,
+    props: true
+  },
+  {
     path: '/promotions',
     name: 'Promotions',
     component: PromotionsPage
@@ -89,6 +104,15 @@ const routes = [
     component: FeedbackPage
   },
   {
+    path: '/account',
+    name: 'Account',
+    component: () => import('../pages/AccountPage.vue')
+  },
+  {
+    path: '/vouchers',
+    redirect: (to) => ({ path: '/account', query: { tab: 'vouchers' } })
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import('../pages/AboutPage.vue')
@@ -97,9 +121,16 @@ const routes = [
     path: '/admin',
     component: AdminLayout,
     children: [
-      { path: '', name: 'Dashboard', component: DashboardPage },
-      { path: 'account', name: 'Account', component: AdminAccount },
+      { path: 'employee', name: 'WelcomeEmployee', component: WelcomeEmployee },
+      { path: '', name: 'AdminWelcome', component: WelcomeAdmin },
+      { path: 'dashboard', name: 'Dashboard', component: DashboardPage },
+      { path: 'account', name: 'AdminAccount', component: AdminAccount },
       { path: 'movies', name: 'Movies', component: MoviePage },
+      { path: 'movies/add', name: 'AddMovie', component: AddMoviePage },
+      { path: 'movies/edit/:id', name: 'EditMovie', component: EditMoviePage, props: true },
+      { path: 'movies/:id', name: 'AdminMovieDetail', component: MovieDetailPage, props: true },
+      { path: 'movies/trash', name: 'MovieTrash', component: MovieTrashPage },
+      { path: 'genres', name: 'AdminMovieGenres', component: GenreManagementAdmin },
       { path: 'rooms', name: 'Rooms', component: RoomPage },
       { path: 'branches', name: 'Branches', component: BranchPage },
       { path: 'schedule', name: 'Schedule', component: SchedulePage },
@@ -121,25 +152,21 @@ const routes = [
     ]
   },
   {
-    path: '/dashboard',
-    component: MainLayout,
-    meta: { requiresAuth: true }, // ✅ Tất cả children bên trong cần login
-    children: [
-      { path: '', name: 'Dashboard', component: DashboardPage },
-      { path: 'account', name: 'Account', component: AccountPage },
-      { path: 'movies', name: 'Movies', component: MoviePage },
-      { path: 'rooms', name: 'Rooms', component: RoomPage },
-      { path: 'branches', name: 'Branches', component: BranchPage },
-      { path: 'schedule', name: 'Schedule', component: SchedulePage },
-      { path: 'bills', name: 'Bills', component: BillPage },
-      { path: 'seats', name: 'Seats', component: SeatPage },
-      { path: 'invoices', name: 'Invoices', component: InvoicePage },
-    ]
+    path: '/social-test',
+    name: 'SocialTest',
+    component: () => import('../pages/SocialLoginTest.vue')
   },
+  // Mount external demo routes under /x for safe access
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import('../pages/Login.vue')
+    path: '/x',
+    component: () => import('../external/layout/MainLayout.vue'),
+    children: [
+      { path: '', name: 'XHome', component: () => import('../external/views/customer/HomePage.vue') },
+      { path: 'booking', name: 'XBooking', component: () => import('../external/views/customer/BookingPage.vue') },
+      { path: 'showtimes', name: 'XShowtimes', component: () => import('../external/pages/USER/ShowtimesPage.vue') },
+      { path: 'movie/:id', name: 'XMovieDetail', component: () => import('../external/pages/MovieDetailPage.vue'), props: true },
+      { path: 'admin', name: 'XAdmin', component: () => import('../external/layout/AdminLayout.vue') },
+    ]
   }
 ]
 
@@ -149,40 +176,125 @@ const router = createRouter({
 })
 
 // ✅ Navigation Guard of Login
+// router.beforeEach((to, from, next) => {
+//   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+//   const userInfo = localStorage.getItem('userInfo')
+//   let userRole = 'user'
+
+//   if (userInfo) {
+//     try {
+//       const parsed = JSON.parse(userInfo)
+//       userRole = parsed.role || 'user'
+//       console.log('User role from localStorage:', userRole)
+//     } catch (e) {
+//       console.error('Error parsing userInfo:', e)
+//     }
+//   }
+
+//   if (to.meta.requiresAuth && !isLoggedIn) {
+//     next('/login')
+//   } else if (to.path === '/login' && isLoggedIn) {
+//     // Chuyển hướng dựa vào role khi đã đăng nhập
+//     const normalizedRole = userRole?.toLowerCase?.() || 'user'
+//     console.log('Navigation guard - normalized role:', normalizedRole)
+
+//     if (
+//       normalizedRole === 'admin' ||
+//       normalizedRole === 'administrator' ||
+//       normalizedRole === 'quản trị viên' ||
+//       normalizedRole === 'quản lý' ||
+//       normalizedRole === 'quan ly' ||
+//       normalizedRole === 'employees' ||
+//       normalizedRole === 'staff' ||
+//       normalizedRole === 'nhân viên bán vé'
+//     ) {
+//       next('/admin')
+//     } else {
+//       next('/home')
+//     }
+//   } else {
+//     next()
+//   }
+
 router.beforeEach((to, from, next) => {
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
   const userInfo = localStorage.getItem('userInfo')
   let userRole = 'user'
-  
+
   if (userInfo) {
     try {
       const parsed = JSON.parse(userInfo)
       userRole = parsed.role || 'user'
-      console.log('User role from localStorage:', userRole)
-    } catch (e) {
-      console.error('Error parsing userInfo:', e)
+    } catch (e) { }
+  }
+
+  function removeVietnameseTones(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+  }
+
+  // Nếu chưa đăng nhập mà vào route cần đăng nhập thì chuyển về trang chủ
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    next('/')
+    return
+  }
+
+  // Nếu đã đăng nhập và đang ở trang login thì chuyển hướng theo role
+  if (to.path === '/login' && isLoggedIn) {
+    const normalizedRole = removeVietnameseTones(userRole?.toLowerCase?.() || 'user')
+    // Nếu là admin hoặc nhân viên thì vào /admin
+    if (
+      normalizedRole.includes('admin') ||
+      normalizedRole.includes('quan tri') ||
+      normalizedRole.includes('quan ly') ||
+      normalizedRole.includes('employee') ||
+      normalizedRole.includes('staff') ||
+      normalizedRole.includes('nhan vien')
+    ) {
+      next('/admin')
+      return
+    } else {
+      next('/')
+      return
     }
   }
 
-  if (to.meta.requiresAuth && !isLoggedIn) {
-    next('/login')
-      } else if (to.path === '/login' && isLoggedIn) {
-      // Chuyển hướng dựa vào role khi đã đăng nhập
-      const normalizedRole = userRole?.toLowerCase?.() || 'user'
-      console.log('Navigation guard - normalized role:', normalizedRole)
-      
-      if (normalizedRole === 'admin' || normalizedRole === 'administrator' || normalizedRole === 'quản trị viên' || normalizedRole === 'quản lý' || normalizedRole === 'quan ly') {
-        console.log('Navigation guard - redirecting to /admin')
-        next('/admin')
-      } else {
-        console.log('Navigation guard - redirecting to /home')
-        next('/home')
-      }
-    } else {
+  // Nếu đã đăng nhập, vào /admin, kiểm tra role, nếu không phải admin/nhân viên thì đá ra trang chủ
+  if (to.path.startsWith('/admin') && isLoggedIn) {
+    const normalizedRole = removeVietnameseTones(userRole?.toLowerCase?.() || 'user')
+    if (
+      normalizedRole.includes('admin') ||
+      normalizedRole.includes('quan tri') ||
+      normalizedRole.includes('quan ly') ||
+      normalizedRole.includes('employee') ||
+      normalizedRole.includes('staff') ||
+      normalizedRole.includes('nhan vien')
+    ) {
       next()
+      return
+    } else {
+      next('/')
+      return
     }
-})
+  }
 
+  // Nếu đã đăng nhập, vào /home, nhưng là admin/nhân viên thì đá về /admin
+  if (to.path === '/home' && isLoggedIn) {
+    const normalizedRole = removeVietnameseTones(userRole?.toLowerCase?.() || 'user')
+    if (
+      normalizedRole.includes('admin') ||
+      normalizedRole.includes('quan tri') ||
+      normalizedRole.includes('quan ly') ||
+      normalizedRole.includes('employee') ||
+      normalizedRole.includes('staff') ||
+      normalizedRole.includes('nhan vien')
+    ) {
+      next('/admin')
+      return
+    }
+  }
+
+  next()
+})
 
 export default router
 

@@ -1,5 +1,10 @@
 <template>
-  <HomeHeader />
+    <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="ticket-price-page">
     <!-- Hero Section -->
     <div class="price-hero">
@@ -183,12 +188,20 @@
     </div>
   </div>
   <HomeFooter />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import HomeHeader from '@/components/HomeHeader.vue'
+import { ref, computed, onMounted } from 'vue'
+import AuthModal from '@/components/AuthModal.vue'
 import HomeFooter from '@/components/HomeFooter.vue'
+import Header from '@/components/Header.vue'
 
 const priceList = ref([
   { id: 1, type: '2D', audience: 'Người lớn', time: 'Thứ 2 - Thứ 6', price: '70.000đ', note: '' },
@@ -199,6 +212,46 @@ const priceList = ref([
   { id: 6, type: '4DX', audience: 'Người lớn', time: 'Tất cả các ngày', price: '180.000đ', note: '' },
   { id: 7, type: '4DX', audience: 'HSSV', time: 'Tất cả các ngày', price: '150.000đ', note: 'Xuất trình thẻ HSSV' },
 ])
+
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
+
+// Load login state when component mounts
+onMounted(() => {
+  loadLoginState()
+})
 </script>
 
 <style scoped>

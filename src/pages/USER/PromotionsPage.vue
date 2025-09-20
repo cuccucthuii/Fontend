@@ -1,5 +1,10 @@
 <template>
-  <HomeHeader />
+    <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="promotions-page">
     <!-- Hero Section -->
     <div class="promotions-hero">
@@ -125,12 +130,20 @@
 
   </div>
   <HomeFooter />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
 
 <script setup>
-import HomeHeader from '@/components/HomeHeader.vue'
 import HomeFooter from '@/components/HomeFooter.vue'
-import { ref } from 'vue'
+import Header from '@/components/Header.vue'
+import { ref, computed, onMounted } from 'vue'
+import AuthModal from '@/components/AuthModal.vue'
 
 
 
@@ -215,9 +228,50 @@ const promotions = ref([
   }
 ])
 
+
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
+
 function claimPromo(promo) {
   alert(`Bạn đã nhận ưu đãi: ${promo.title}`)
 }
+
+// Load login state when component mounts
+onMounted(() => {
+  loadLoginState()
+})
 </script>
 
 <style scoped>

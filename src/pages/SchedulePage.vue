@@ -125,7 +125,7 @@
             <td>{{ schedule.tenPhongChieu }}</td>
             <td class="actions-cell">
               <button class="edit action-btn">✏️</button>
-              <button class="delete action-btn">❌</button>
+              <button class="delete action-btn" @click="handleDeleteSchedule(schedule.idSuatChieu)">❌</button>
             </td>
           </tr>
         </tbody>
@@ -157,7 +157,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { fetchSchedules } from '../services/scheduleService'
+import { fetchSchedules, deleteSchedule  } from '../services/scheduleService'
 
 const schedules = ref([])
 const currentPage = ref(1)
@@ -166,6 +166,20 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const movieFilter = ref('')
 const roomFilter = ref('')
+
+async function handleDeleteSchedule(id) {
+  const confirmDelete = window.confirm('Bạn có chắc chắn muốn xoá suất chiếu này không?')
+  if (!confirmDelete) return
+
+  try {
+    await deleteSchedule(id)
+    schedules.value = schedules.value.filter(s => s.idSuatChieu !== id)
+    alert('✔️ Xoá suất chiếu thành công!')
+  } catch (error) {
+    console.error('❌ Lỗi khi xoá suất chiếu:', error)
+    alert('❌ Xoá suất chiếu thất bại!')
+  }
+}
 
 const filteredSchedules = computed(() => {
   let filtered = schedules.value
@@ -274,9 +288,8 @@ function formatDate(dateStr) {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 .schedule-page {
-  font-family: 'Roboto', Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 32px;

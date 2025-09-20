@@ -8,7 +8,7 @@
       </div>
       <div class="footer-info">
         <div class="footer-contact">
-          <span class="contact-item"><span class="icon">📍</span> 123 Đường Phim, TP. Điện Ảnh</span>
+          <span class="contact-item"><span class="icon">📍</span> 123 Đường Trịnh Văn Bô, TP. Hà Nội</span>
           <span class="contact-item"><span class="icon">☎️</span> 0123 456 789</span>
           <span class="contact-item"><span class="icon">✉️</span> support@devcinema.vn</span>
         </div>

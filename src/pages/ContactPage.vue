@@ -1,5 +1,10 @@
 <template>
-  <HomeHeader />
+    <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="contact-page">
     <!-- Hero Section -->
     <div class="contact-hero">
@@ -128,7 +133,7 @@
       <h2>Vị Trí Của Chúng Tôi</h2>
       <div class="map-container">
         <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638060211256!2d105.74468151089454!3d21.03813478737556!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313455e940879933%3A0xcf10b34e9f1a03df!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIEZQVCBQb2x5dGVjaG5pYw!5e0!3m2!1svi!2s!4v1751900364473!5m2!1svi!2s"" 
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3723.8638060211256!2d105.74468151089454!3d21.03813478737556!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x313455e940879933%3A0xcf10b34e9f1a03df!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIEZQVCBQb2x5dGVjaG5pYw!5e0!3m2!1svi!2s!4v1751900364473!5m2!1svi!2s"
           width="100%" 
           height="400" 
           style="border:0;" 
@@ -139,13 +144,21 @@
     </div>
   </div>
   <HomeFooter />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import AuthModal from '@/components/AuthModal.vue'
 import emailjs from 'emailjs-com'
-import HomeHeader from '@/components/HomeHeader.vue'
 import HomeFooter from '@/components/HomeFooter.vue'
+import Header from '@/components/Header.vue'
 
 const form = ref({ 
   name: '', 
@@ -157,6 +170,42 @@ const form = ref({
 const loading = ref(false)
 const successMsg = ref('')
 const errorMsg = ref('')
+
+
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
 
 function sendEmail() {
   loading.value = true
@@ -181,6 +230,11 @@ function sendEmail() {
       loading.value = false
     })
 }
+
+// Load login state when component mounts
+onMounted(() => {
+  loadLoginState()
+})
 </script>
 
 <style scoped>

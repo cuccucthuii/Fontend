@@ -1,10 +1,10 @@
-<script setup>
-import HomeHeader from '@/components/HomeHeader.vue'
-import HomeFooter from '@/components/HomeFooter.vue'
-</script>
-
 <template>
-  <HomeHeader />
+    <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="about-page">
     <!-- Hero Section -->
     <section class="hero-section">
@@ -200,7 +200,61 @@ import HomeFooter from '@/components/HomeFooter.vue'
     </section>
   </div>
   <HomeFooter />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import AuthModal from '@/components/AuthModal.vue'
+import HomeFooter from '@/components/HomeFooter.vue'
+import Header from '@/components/Header.vue'
+
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
+
+// Load login state when component mounts
+onMounted(() => {
+  loadLoginState()
+})
+</script>
 
 <style scoped>
 .about-page {
@@ -257,14 +311,11 @@ import HomeFooter from '@/components/HomeFooter.vue'
 }
 
 .hero-title {
-  font-size: 4.5rem;
+  font-size: 32px;
   font-weight: 900;
-  margin-bottom: 1rem;
-  background: linear-gradient(135deg, #48dbfb 0%, #feca57 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 4px 20px rgba(72,219,251,0.3);
+  margin-bottom: 18px;
+  color: #48dbfb;
+  letter-spacing: 2px;
 }
 
 .hero-subtitle {

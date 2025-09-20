@@ -1,5 +1,10 @@
 <template>
-  <HomeHeader />
+  <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="showtimes-page">
     <div class="showtimes-hero">
       <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1200&q=80" alt="Showtimes Banner" class="showtimes-hero-img" />
@@ -9,23 +14,30 @@
       </div>
     </div>
     <div class="showtimes-filter">
-      <select v-model="selectedCinema">
-        <option value="">Tất cả rạp</option>
-        <option v-for="cinema in cinemas" :key="cinema" :value="cinema">{{ cinema }}</option>
-      </select>
+      <button class="btn-cinema-picker" @click="openCinemaModal" @mousedown="console.log('Button mousedown')" @mouseup="console.log('Button mouseup')">
+        {{ selectedCinemaName || 'Tất cả rạp' }}
+      </button>
       <input type="date" v-model="selectedDate" />
       <input type="text" v-model="search" placeholder="Tìm phim..." />
     </div>
-    <div class="showtimes-list">
-      <div v-for="movie in filteredMovies" :key="movie.id" class="showtimes-movie-card">
-        <img :src="movie.poster" :alt="movie.title" class="showtimes-movie-img" />
+    <div v-if="loadingMovies" class="showtimes-loading">
+      <div class="loading-spinner"></div>
+      <p>Đang tải danh sách phim...</p>
+    </div>
+    <div v-else-if="filteredMovies.length === 0" class="showtimes-empty">
+      <p>Không có phim nào phù hợp với bộ lọc.</p>
+    </div>
+    <div v-else class="showtimes-list">
+      <div v-for="movie in filteredMovies" :key="movie.idPhim" class="showtimes-movie-card">
+        <img :src="getPosterUrl(movie.posterUrl)" :alt="movie.tenPhim" class="showtimes-movie-img" @click="goToMovieDetail(movie)" style="cursor: pointer;" />
         <div class="showtimes-movie-info">
-          <h2>{{ movie.title }}</h2>
-          <div class="showtimes-movie-meta">{{ movie.genre }} | {{ movie.duration }} phút</div>
-          <div class="showtimes-sessions">
-            <span v-for="session in movie.sessions" :key="session.time" class="showtimes-session">
-              {{ session.time }} - {{ session.cinema }}
-            </span>
+          <h2 @click="goToMovieDetail(movie)" style="cursor: pointer;">{{ movie.tenPhim }}</h2>
+          <div class="showtimes-movie-meta">
+            {{ movie.theLoai ? movie.theLoai.join(', ') : 'Chưa phân loại' }} | 
+            {{ movie.thoiLuong ? movie.thoiLuong + ' phút' : 'Chưa cập nhật' }}
+          </div>
+          <div class="showtimes-movie-status" :class="getStatusClass(movie.trangThai)">
+            {{ formatStatus(movie.trangThai) }}
           </div>
           <button class="btn-book" @click="bookMovie(movie)">Đặt vé</button>
         </div>
@@ -33,52 +45,227 @@
     </div>
   </div>
   <HomeFooter />
+  <CinemaSelectModal
+    :visible="showCinemaModal"
+    mode="showtime"
+    @close="showCinemaModal = false"
+    @cinema-selected="onCinemaSelected"
+    @showtime-flow="onCinemaSelected"
+  />
+  
+  <ShowtimeModal
+    :visible="showShowtimeModal"
+    :movie="selectedMovie"
+    :cinema="selectedCinemaObj"
+    @close="showShowtimeModal = false"
+    @selectShowtime="onShowtimeSelected"
+  />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
 
 <script setup>
-import HomeHeader from '@/components/HomeHeader.vue'
 import HomeFooter from '@/components/HomeFooter.vue'
-import { ref, computed } from 'vue'
+import Header from '@/components/Header.vue'
+import CinemaSelectModal from '@/components/CinemaSelectModal.vue'
+import ShowtimeModal from '@/components/ShowtimeModal.vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { fetchMovies } from '../../services/movieService'
+import { fetchBranches } from '../../services/branchService'
+import { API_BASE_URL } from '@/services/api'
+import AuthModal from '@/components/AuthModal.vue'
 
-const cinemas = ['DEV Cinema Hà Nội', 'DEV Cinema Sài Gòn', 'DEV Cinema Đà Nẵng']
+const branches = ref([])
+const cinemas = ref([])
 const selectedCinema = ref('')
+const selectedCinemaObj = ref(null)
+const showCinemaModal = ref(false)
+const showShowtimeModal = ref(false)
+const selectedMovie = ref(null)
+const selectedCinemaName = computed(() => selectedCinemaObj.value?.tenRapChieu || selectedCinemaObj.value?.tenRap || selectedCinema.value || '')
+
+function openCinemaModal(){ 
+  console.log('🎬 Opening cinema modal...')
+  showCinemaModal.value = true 
+  console.log('🎬 showCinemaModal.value:', showCinemaModal.value)
+}
+function onCinemaSelected(cinema){ 
+  selectedCinemaObj.value = cinema; 
+  showCinemaModal.value = false
+  // Mở modal lịch chiếu sau khi chọn rạp
+  if (selectedMovie.value) {
+    showShowtimeModal.value = true
+  }
+}
+
+function onShowtimeSelected(showtimeData) {
+  console.log('Selected showtime:', showtimeData)
+  // Chuyển đến trang booking với thông tin đã chọn
+  router.push({ 
+    path: '/booking', 
+    query: { 
+      movieId: String(showtimeData.movie.idPhim || showtimeData.movie.id),
+      cinemaId: String(showtimeData.cinema.idRapChieu || showtimeData.cinema.id),
+      date: showtimeData.date,
+      time: showtimeData.time,
+      scheduleId: String(showtimeData.scheduleId)
+    }
+  })
+}
 const selectedDate = ref('')
 const search = ref('')
 
-const movies = ref([
-  {
-    id: 1,
-    title: 'Godzilla x Kong',
-    genre: 'Hành động, Quái vật',
-    duration: 120,
-    poster: 'https://image.tmdb.org/t/p/w500/2vFuG6bWGyQUzYS9d69E5l85nIz.jpg',
-    sessions: [
-      { time: '09:00', cinema: 'DEV Cinema Hà Nội' },
-      { time: '14:00', cinema: 'DEV Cinema Sài Gòn' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Dune: Part Two',
-    genre: 'Phiêu lưu, Khoa học viễn tưởng',
-    duration: 150,
-    poster: 'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg',
-    sessions: [
-      { time: '11:00', cinema: 'DEV Cinema Hà Nội' },
-      { time: '16:00', cinema: 'DEV Cinema Đà Nẵng' }
-    ]
-  }
-])
+const router = useRouter()
+const movies = ref([])
+const loadingMovies = ref(true)
+const loadingBranches = ref(true)
 
-const filteredMovies = computed(() => {
-  return movies.value.filter(m =>
-    (!selectedCinema.value || m.sessions.some(s => s.cinema === selectedCinema.value)) &&
-    (!search.value || m.title.toLowerCase().includes(search.value.toLowerCase()))
-  )
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
+
+// Hàm load movies
+async function loadMovies() {
+  loadingMovies.value = true
+  try {
+    const res = await fetchMovies()
+    movies.value = res.data
+  } catch (error) {
+    console.error('Lỗi tải phim:', error)
+  } finally {
+    loadingMovies.value = false
+  }
+}
+
+async function loadBranches() {
+  loadingBranches.value = true
+  try {
+    const res = await fetchBranches()
+    const list = Array.isArray(res?.data) ? res.data : (res?.data?.content || [])
+    branches.value = list
+    cinemas.value = list.map(b => b.tenRap || b.ten || b.name).filter(Boolean)
+  } catch (error) {
+    console.error('Lỗi tải rạp chiếu:', error)
+    branches.value = []
+    cinemas.value = []
+  } finally {
+    loadingBranches.value = false
+  }
+}
+
+onMounted(async () => {
+  loadLoginState() // Load login state first
+  await Promise.all([loadMovies(), loadBranches()])
+  
+  // Lắng nghe sự kiện khi có thay đổi phim từ admin
+  window.addEventListener('moviesUpdated', async () => {
+    console.log('🔄 Phát hiện thay đổi phim, đang refresh dữ liệu...')
+    await loadMovies()
+  })
 })
 
+// Logic xác định phim đang chiếu giống HomePage
+const DEFAULT_SHOWING_DAYS = 30
+
+const isMovieCurrentlyShowing = (movie) => {
+  // Chỉ hiển thị phim đang chiếu
+  if (movie?.trangThai === 'NGUNG_CHIEU') return false
+  const release = movie?.ngayPhatHanh
+  if (!release) return false
+  const releaseDate = new Date(release)
+  if (isNaN(releaseDate.getTime())) return false
+  const today = new Date(); today.setHours(0,0,0,0)
+  releaseDate.setHours(0,0,0,0)
+  
+  // Chỉ hiển thị phim đã phát hành (đang chiếu)
+  if (releaseDate.getTime() > today.getTime()) return false
+  
+  // Kiểm tra phim vẫn trong thời gian chiếu
+  const endDate = new Date(releaseDate)
+  endDate.setDate(endDate.getDate() + DEFAULT_SHOWING_DAYS)
+  return today.getTime() <= endDate.getTime()
+}
+
+const filteredMovies = computed(() => {
+  const currentlyShowing = movies.value.filter(m => isMovieCurrentlyShowing(m))
+  const searchFiltered = currentlyShowing.filter(m =>
+    (!search.value || m.tenPhim.toLowerCase().includes(search.value.toLowerCase()))
+  )
+  
+  console.log('ShowtimesPage - Total movies:', movies.value.length)
+  console.log('ShowtimesPage - Currently showing:', currentlyShowing.length)
+  console.log('ShowtimesPage - After search filter:', searchFiltered.length)
+  
+  return searchFiltered
+})
+
+function getPosterUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/')) return url // Public assets
+  return API_BASE_URL + url
+}
+
+function getStatusClass(status) {
+  const statusClasses = {
+    'DANG_CHIEU': 'status-active',
+    'NGUNG_CHIEU': 'status-inactive'
+  }
+  return statusClasses[status] || 'status-default'
+}
+
+function formatStatus(status) {
+  const statusMap = {
+    'DANG_CHIEU': 'Đang chiếu',
+    'NGUNG_CHIEU': 'Ngừng chiếu'
+  }
+  return statusMap[status] || status
+}
+
 function bookMovie(movie) {
-  alert(`Đặt vé cho phim: ${movie.title}`)
+  selectedMovie.value = movie
+  showCinemaModal.value = true
+}
+
+function goToMovieDetail(movie) {
+  router.push(`/movie/${movie.idPhim}`)
 }
 </script>
 
@@ -125,6 +312,8 @@ function bookMovie(movie) {
   gap: 18px;
   justify-content: center;
   margin-bottom: 32px;
+  position: relative;
+  z-index: 1;
 }
 .showtimes-filter select,
 .showtimes-filter input[type='date'],
@@ -136,6 +325,26 @@ function bookMovie(movie) {
   color: #fff;
   font-size: 1rem;
   outline: none;
+}
+.btn-cinema-picker { 
+  padding: 10px 16px; 
+  border-radius: 8px; 
+  border: 1.5px solid #48dbfb; 
+  background: #232526; 
+  color: #fff; 
+  font-size: 1rem; 
+  cursor: pointer; 
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 999;
+  pointer-events: auto;
+}
+
+.btn-cinema-picker:hover {
+  background: #2c3e50;
+  border-color: #feca57;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 219, 251, 0.3);
 }
 .showtimes-list {
   max-width: 1100px;
@@ -164,6 +373,12 @@ function bookMovie(movie) {
   object-fit: cover;
   border-radius: 12px;
   box-shadow: 0 2px 8px #48dbfb33;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.showtimes-movie-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px #48dbfb66;
 }
 .showtimes-movie-info {
   flex: 1;
@@ -173,6 +388,11 @@ function bookMovie(movie) {
   font-weight: 800;
   margin-bottom: 6px;
   color: #48dbfb;
+  transition: color 0.2s;
+}
+
+.showtimes-movie-info h2:hover {
+  color: #feca57;
 }
 .showtimes-movie-meta {
   font-size: 1rem;
@@ -209,6 +429,57 @@ function bookMovie(movie) {
   background: linear-gradient(90deg, #667eea 0%, #48dbfb 100%);
   transform: scale(1.05);
 }
+.showtimes-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #48dbfb;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #48dbfb33;
+  border-top: 4px solid #48dbfb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.showtimes-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #b2bec3;
+}
+
+.showtimes-movie-status {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.status-active {
+  background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+  color: #fff;
+}
+
+.status-inactive {
+  background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+  color: #fff;
+}
+
+.status-default {
+  background: #636e72;
+  color: #fff;
+}
+
 @media (max-width: 700px) {
   .showtimes-list { grid-template-columns: 1fr; }
   .showtimes-movie-card { flex-direction: column; align-items: center; }

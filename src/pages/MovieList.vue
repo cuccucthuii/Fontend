@@ -57,28 +57,124 @@
           <tr>
             <th>STT</th>
             <th>Tên Phim</th>
+            <th>Mô Tả</th>
+            <th>Thời Lượng</th>
+            <th>Ngày Phát Hành</th>
+            <th>Trạng Thái</th>
+            <th>Định Dạng</th>
+            <th>Ngày Tạo</th>
+            <th>Tuổi Giới Hạn</th>
+            <th>Năm Sản Xuất</th>
+            <th>Độ Phổ Biến</th>
+            <th>Giá Vé Cơ Bản</th>
+            <th>Đạo Diễn</th>
+            <th>Diễn Viên Chính</th>
+            <th>Thể Loại</th>
+            <th>Poster</th>
+            <th>Banner</th>
             <th>Trailer</th>
-            <th>Trạng thái</th>
+            <th>Chức Năng</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="(movie, index) in filteredMovies" :key="movie.idPhim">
             <td>{{ index + 1 }}</td>
-            <td>{{ movie.tenPhim }}</td>
-            <td>
+            <td class="movie-title">
+              <div class="title-content">
+                <span class="movie-icon">🎬</span>
+                {{ movie.tenPhim }}
+              </div>
+            </td>
+            <td class="movie-description">
+              <div class="description-text" :title="movie.moTa">
+                {{ movie.moTa || '-' }}
+              </div>
+            </td>
+            <td class="duration">
+              <span class="duration-badge">
+                {{ movie.thoiLuong ? movie.thoiLuong + ' phút' : '-' }}
+              </span>
+            </td>
+            <td class="release-date">
+              {{ movie.ngayPhatHanh ? formatDate(movie.ngayPhatHanh) : '-' }}
+            </td>
+            <td class="status">
+              <span :class="['status-badge', getStatusClass(movie.trangThai)]">
+                {{ getStatusText(movie.trangThai) }}
+              </span>
+            </td>
+            <td class="format">
+              <span class="format-badge">
+                {{ movie.dinhDang || '-' }}
+              </span>
+            </td>
+            <td class="created-date">
+              {{ movie.ngayTao ? formatDate(movie.ngayTao) : '-' }}
+            </td>
+            <td class="age-limit">
+              <span class="age-badge">
+                {{ movie.tuoiGioiHan ? movie.tuoiGioiHan + '+' : '-' }}
+              </span>
+            </td>
+            <td class="production-year">
+              {{ movie.namSanXuat || '-' }}
+            </td>
+            <td class="popularity">
+              <div class="popularity-bar">
+                <div class="popularity-fill" :style="{ width: (movie.doPhoBien || 0) + '%' }"></div>
+                <span class="popularity-text">{{ movie.doPhoBien || 0 }}%</span>
+              </div>
+            </td>
+            <td class="base-price">
+              <span class="price-badge">
+                {{ movie.giaVeCoBan ? formatPrice(movie.giaVeCoBan) : '-' }}
+              </span>
+            </td>
+            <td class="director">
+              {{ movie.daoDien || '-' }}
+            </td>
+            <td class="main-actor">
+              {{ movie.dienVienChinh || '-' }}
+            </td>
+            <td class="genre">
+              <span class="genre-badge">
+                {{ movie.theLoai || '-' }}
+              </span>
+            </td>
+            <td class="poster">
+              <div v-if="movie.posterUrl" class="image-preview">
+                <img :src="movie.posterUrl" :alt="movie.tenPhim" class="preview-image" />
+              </div>
+              <span v-else class="no-image">-</span>
+            </td>
+            <td class="banner">
+              <div v-if="movie.bannerUrl" class="image-preview">
+                <img :src="movie.bannerUrl" :alt="movie.tenPhim" class="preview-image" />
+              </div>
+              <span v-else class="no-image">-</span>
+            </td>
+            <td class="trailer">
               <button
                 v-if="movie.trailerUrl"
                 @click="openTrailer(movie.trailerUrl)"
                 class="btn-trailer"
               >
-                <span class="trailer-icon">▶️</span> Xem Trailer
+                <span class="trailer-icon">▶️</span> Xem
               </button>
               <span v-else class="no-trailer">-</span>
             </td>
-            <td>
-              <span :class="['trailer-badge', movie.trailerUrl ? 'has-trailer' : 'no-trailer']">
-                {{ movie.trailerUrl ? 'Có trailer' : 'Chưa có trailer' }}
-              </span>
+            <td class="actions">
+              <div class="action-buttons">
+                <button @click="viewMovie(movie)" class="btn-action btn-view" title="Xem chi tiết">
+                  <span class="action-icon">👁️</span>
+                </button>
+                <button @click="editMovie(movie)" class="btn-action btn-edit" title="Sửa phim">
+                  <span class="action-icon">✏️</span>
+                </button>
+                <button @click="deleteMovie(movie)" class="btn-action btn-delete" title="Xóa phim">
+                  <span class="action-icon">🗑️</span>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -105,13 +201,23 @@ const showTrailerModal = ref(false)
 const currentTrailerUrl = ref('')
 const searchQuery = ref('')
 
-onMounted(async () => {
+// Hàm load movies
+async function loadMovies() {
   try {
     const res = await fetchMovies()
     movies.value = res.data
   } catch (e) {
     console.error('Lỗi tải phim:', e)
   }
+}
+
+onMounted(async () => {
+  await loadMovies()
+  // Lắng nghe sự kiện khi có thay đổi phim từ admin
+  window.addEventListener('moviesUpdated', async () => {
+    console.log('🔄 Phát hiện thay đổi phim, đang refresh dữ liệu...')
+    await loadMovies()
+  })
 })
 
 function openTrailer(url) {
@@ -130,12 +236,70 @@ const moviesWithoutTrailer = computed(() => movies.value.filter(m => !m.trailerU
 function clearFilters() {
   searchQuery.value = ''
 }
+
+// Helper functions for formatting data
+function formatDate(dateString) {
+  if (!dateString) return '-'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('vi-VN')
+  } catch (e) {
+    return dateString
+  }
+}
+
+function formatPrice(price) {
+  if (!price) return '-'
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(price)
+}
+
+function getStatusText(status) {
+  const statusMap = {
+    'DANG_CHIEU': 'Đang chiếu',
+    'SAP_CHIEU': 'Sắp chiếu',
+    'NGUNG_CHIEU': 'Ngừng chiếu',
+    'HOAN_THANH': 'Hoàn thành'
+  }
+  return statusMap[status] || status || '-'
+}
+
+function getStatusClass(status) {
+  const classMap = {
+    'DANG_CHIEU': 'status-showing',
+    'SAP_CHIEU': 'status-coming',
+    'NGUNG_CHIEU': 'status-stopped',
+    'HOAN_THANH': 'status-completed'
+  }
+  return classMap[status] || 'status-default'
+}
+
+// Action functions
+function viewMovie(movie) {
+  // Navigate to movie detail page
+  console.log('Xem chi tiết phim:', movie.tenPhim)
+  // You can add navigation logic here
+}
+
+function editMovie(movie) {
+  // Navigate to edit movie page
+  console.log('Sửa phim:', movie.tenPhim)
+  // You can add navigation logic here
+}
+
+function deleteMovie(movie) {
+  if (confirm(`Bạn có chắc chắn muốn xóa phim "${movie.tenPhim}"?`)) {
+    console.log('Xóa phim:', movie.tenPhim)
+    // You can add delete logic here
+  }
+}
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 .movie-page {
-  font-family: 'Roboto', Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 32px;
@@ -308,27 +472,255 @@ function clearFilters() {
 }
 table {
   width: 100%;
-  min-width: 700px;
+  min-width: 2000px;
   border-collapse: collapse;
   background-color: #fff;
   table-layout: auto;
 }
 th, td {
   border: 1px solid #e2e8f0;
-  padding: 12px 18px;
+  padding: 12px 8px;
   text-align: left;
   color: #333;
-  white-space: nowrap;
-  font-size: 15px;
+  font-size: 13px;
+  vertical-align: top;
 }
 th {
   background-color: #f8f9fa;
-  font-size: 13px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 tr:nth-child(even) { background-color: #f9f9f9; }
+
+/* Column-specific styling */
+.movie-title {
+  min-width: 150px;
+  max-width: 200px;
+}
+.title-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.movie-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.movie-description {
+  min-width: 200px;
+  max-width: 250px;
+}
+.description-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.duration, .age-limit, .production-year {
+  text-align: center;
+  min-width: 80px;
+}
+.duration-badge, .age-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.release-date, .created-date {
+  min-width: 100px;
+  text-align: center;
+}
+
+.status {
+  min-width: 100px;
+  text-align: center;
+}
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.status-showing {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+.status-coming {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+.status-stopped {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+.status-completed {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+}
+.status-default {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.format {
+  text-align: center;
+  min-width: 80px;
+}
+.format-badge {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.popularity {
+  min-width: 120px;
+}
+.popularity-bar {
+  position: relative;
+  background: #e5e7eb;
+  border-radius: 8px;
+  height: 20px;
+  overflow: hidden;
+}
+.popularity-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  transition: width 0.3s ease;
+}
+.popularity-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.base-price {
+  text-align: center;
+  min-width: 100px;
+}
+.price-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+
+.director, .main-actor {
+  min-width: 120px;
+  max-width: 150px;
+}
+
+.genre {
+  text-align: center;
+  min-width: 100px;
+}
+.genre-badge {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.poster, .banner {
+  text-align: center;
+  min-width: 80px;
+}
+.image-preview {
+  width: 50px;
+  height: 70px;
+  margin: 0 auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.no-image {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.trailer {
+  text-align: center;
+  min-width: 80px;
+}
+
+.actions {
+  text-align: center;
+  min-width: 120px;
+}
+.action-buttons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+.btn-action {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-view {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+}
+.btn-view:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  transform: scale(1.1);
+}
+.btn-edit {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+.btn-edit:hover {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  transform: scale(1.1);
+}
+.btn-delete {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+.btn-delete:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  transform: scale(1.1);
+}
+.action-icon {
+  font-size: 14px;
+}
 .btn-trailer {
   background: linear-gradient(135deg, #48dbfb 0%, #0abde3 100%);
   border: none;
@@ -374,6 +766,51 @@ tr:nth-child(even) { background-color: #f9f9f9; }
   color: #7f8c8d;
   font-size: 16px;
 }
+.genre-management-link {
+  margin: 24px 0 0 0;
+  text-align: right;
+}
+.btn-genre {
+  background: linear-gradient(135deg, #ffb347 0%, #ffcc33 100%);
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-left: 12px;
+}
+.btn-genre:hover {
+  background: linear-gradient(135deg, #ffcc33 0%, #ffb347 100%);
+  transform: translateY(-2px);
+}
+.btn-action {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-action:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: scale(1.06);
+}
+@media (max-width: 1200px) {
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    min-width: 2000px;
+  }
+}
+
 @media (max-width: 900px) {
   .page-header, .stats-section, .filters-section, .table-container {
     padding: 16px;
@@ -383,8 +820,22 @@ tr:nth-child(even) { background-color: #f9f9f9; }
   .stats-section {
     grid-template-columns: 1fr;
   }
+  .filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-group {
+    min-width: auto;
+  }
   table {
-    min-width: 400px;
+    min-width: 2000px;
+  }
+  th, td {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+  .description-text {
+    -webkit-line-clamp: 2;
   }
 }
 @keyframes slideInUp {

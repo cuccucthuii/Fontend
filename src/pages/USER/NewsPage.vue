@@ -1,5 +1,10 @@
 <template>
-  <HomeHeader />
+    <Header 
+    :is-logged-in="isLoggedIn"
+    :user-info="userInfo"
+    @show-auth-modal="handleShowAuthModal"
+    @logout-success="handleLogoutSuccess"
+  />
   <div class="news-page dark-mode">
     <div class="news-content">
       <div class="news-header">
@@ -25,12 +30,20 @@
     </div>
   </div>
   <HomeFooter />
+
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal"
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import HomeHeader from '@/components/HomeHeader.vue'
+import { ref, computed, onMounted } from 'vue'
+import AuthModal from '@/components/AuthModal.vue'
 import HomeFooter from '@/components/HomeFooter.vue'
+import Header from '@/components/Header.vue'
 
 const newsList = ref([
   {
@@ -71,23 +84,64 @@ const newsList = ref([
   },
 ])
 
+
+// Login state management
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Load login state from localStorage
+function loadLoginState() {
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    try {
+      userInfo.value = JSON.parse(storedUserInfo)
+    } catch (error) {
+      console.error('Error parsing userInfo:', error)
+      userInfo.value = {}
+    }
+  }
+}
+
+// Auth modal handlers
+function handleShowAuthModal(type) {
+  showAuthModal.value = true
+}
+
+function handleLoginSuccess(userData) {
+  isLoggedIn.value = true
+  userInfo.value = userData
+  showAuthModal.value = false
+}
+
+function handleLogoutSuccess() {
+  isLoggedIn.value = false
+  userInfo.value = {}
+}
+
 function viewNews(item) {
   alert(`Xem chi tiết tin: ${item.title}`)
 }
+
+// Load login state when component mounts
+onMounted(() => {
+  loadLoginState()
+})
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 .news-page.dark-mode {
   background: linear-gradient(135deg, #232526 0%, #1c1c1c 100%);
   color: #fff;
   min-height: 100vh;
   padding-bottom: 40px;
-  font-family: 'Roboto', Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .main-header.dark {
   background: #18191a;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .header-container {
   max-width: 1200px;
@@ -108,6 +162,7 @@ function viewNews(item) {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .header-menu {
   display: flex;
@@ -122,6 +177,7 @@ function viewNews(item) {
   padding: 8px 0;
   position: relative;
   transition: color 0.2s;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .menu-link.active, .menu-link:hover {
   color: #48dbfb;
@@ -229,7 +285,7 @@ function viewNews(item) {
 .news-header {
   max-width: 1200px;
   margin: 0 auto 32px auto;
-  padding: 48px 0 0 0;
+  padding: 150px 0 0 0;
   text-align: center;
 }
 .news-title {

@@ -58,6 +58,7 @@
   import 'vue-datepicker-next/index.css'
   
   import { fetchSeatsByRoom, fetchScheduleById } from '../../services/posService'
+  import { holdSeats } from '../../services/bookingService'
   
   const route = useRoute()
   const router = useRouter()
@@ -69,6 +70,7 @@
   const selectedSeats = ref([])
   const loading = ref(true)
   const selectedDate = ref('')
+  const holdId = ref(null)
   
   onMounted(async () => {
   console.log('🟡 Route param scheduleId:', scheduleId);
@@ -117,14 +119,29 @@
     }
   }
   
-  function confirmSeats() {
-    router.push({
-      name: 'POSPayment',
-      query: {
-        scheduleId,
-        seatIds: selectedSeats.value.join(',')
-      }
-    })
+  async function confirmSeats() {
+    if (!selectedSeats.value.length) return
+    try {
+      loading.value = true
+      const res = await holdSeats({
+        scheduleId: Number(scheduleId),
+        seatIds: selectedSeats.value
+      })
+      holdId.value = res?.data?.holdId || res?.data?.id || res?.data?.data?.holdId
+      router.push({
+        name: 'POSPayment',
+        query: {
+          scheduleId,
+          seatIds: selectedSeats.value.join(','),
+          holdId: holdId.value
+        }
+      })
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Không thể giữ ghế. Vui lòng thử lại.'
+      alert(message)
+    } finally {
+      loading.value = false
+    }
   }
   
   const selectedSeatsNames = computed(() =>
@@ -136,10 +153,8 @@
   </script>
   
   <style scoped>
-  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-  
   .seat-page {
-    font-family: 'Roboto', Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
     padding: 32px;

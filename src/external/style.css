@@ -1,0 +1,167 @@
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+}
+
+h1 {
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+.card {
+  padding: 2em;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+.admin-page-container {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(79,140,255,0.08);
+  color: #232946;
+  padding: 40px 32px;
+  max-width: 1200px;
+  margin: 40px auto;
+}
+.stat-card, .account-card {
+  background: #f1f5ff;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(79,140,255,0.10);
+  padding: 40px 32px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #232946;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+.stat-icon, .account-icon {
+  font-size: 3.5rem;
+  margin-right: 24px;
+}
+.stat-number, .account-info {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #6a82fb 0%, #fc5c7d 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  padding: 12px 32px;
+  box-shadow: 0 4px 16px rgba(252,92,125,0.15);
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #fc5c7d 0%, #6a82fb 100%);
+}
+.btn-secondary {
+  background: #232946;
+  color: #fff;
+  border: 1px solid #a259f7;
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 12px 28px;
+}
+.table-admin, input, select, textarea {
+  background: #23242a;
+  color: #f5f7fa;
+  border: 1px solid #333;
+  border-radius: 10px;
+}
+.badge-accent {
+  background: #fc5c7d;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-weight: 600;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+html, body, #app {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+body, html, #app, .homepage.dark-mode {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
