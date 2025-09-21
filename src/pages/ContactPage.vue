@@ -155,10 +155,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import AuthModal from '@/components/AuthModal.vue'
+import AuthModal from '../components/modals/AuthModal.vue'
 import emailjs from 'emailjs-com'
-import HomeFooter from '@/components/HomeFooter.vue'
-import Header from '@/components/Header.vue'
+import HomeFooter from '../components/layout/HomeFooter.vue'
+import Header from '../components/layout/Header.vue'
 
 const form = ref({ 
   name: '', 

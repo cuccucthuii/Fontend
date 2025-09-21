@@ -10,35 +10,35 @@ import AddMoviePage from '../pages/AddMoviePage.vue'
 import EditMoviePage from '../pages/EditMoviePage.vue'
 import MovieDetailPage from '../pages/MovieDetailPage.vue'
 import MovieList from '../pages/MovieList.vue'
-import MovieDetailAdmin from '../pages/admin/MovieDetailAdmin.vue'
-import GenreManagementAdmin from '../pages/admin/GenreManagementAdmin.vue'
+import MovieDetailAdmin from '../views/admin/MovieDetailAdmin.vue'
+import GenreManagementAdmin from '../views/admin/GenreManagementAdmin.vue'
 import RoomPage from '../pages/RoomPage.vue'
 import BranchPage from '../pages/BranchPage.vue'
 import SchedulePage from '../pages/SchedulePage.vue'
 import BillPage from '../pages/BillPage.vue'
 import SeatPage from '../pages/SeatPage.vue'
 import InvoicePage from '../pages/InvoicePage.vue'
-import NewsPage from '../pages/USER/NewsPage.vue'
-import TicketPricePage from '../pages/USER/TicketPricePage.vue'
-import ShowtimesPage from '../pages/USER/ShowtimesPage.vue'
+import NewsPage from '../views/customer/NewsPage.vue'
+import TicketPricePage from '../views/customer/TicketPricePage.vue'
+import ShowtimesPage from '../views/customer/ShowtimesPage.vue'
 import MovieTrashPage from '../pages/MovieTrashPage.vue'
-import PromotionsPage from '../pages/USER/PromotionsPage.vue'
+import PromotionsPage from '../views/customer/PromotionsPage.vue'
 import TermsPage from '../pages/TermsPage.vue'
 import PrivacyPage from '../pages/PrivacyPage.vue'
 import ContactPage from '../pages/ContactPage.vue'
 import FeedbackPage from '../pages/FeedbackPage.vue'
 import AdminAccount from '../pages/AdminAccount.vue'
 import AdminLayout from '../layout/AdminLayout.vue'
-import AdminAddEmployee from '../pages/admin/AdminAddEmployee.vue'
-import WelcomeAdmin from '../pages/admin/WelcomeAdmin.vue'
-import WelcomeEmployee from '../pages/admin/WelcomeEmployee.vue'
+import AdminAddEmployee from '../views/admin/AdminAddEmployee.vue'
+import WelcomeAdmin from '../views/admin/WelcomeAdmin.vue'
+import WelcomeEmployee from '../views/admin/WelcomeEmployee.vue'
 
 // POS Layout & Pages
 import POSLayout from '../layout/POSLayout.vue'
-import POSHomePage from '../pages/POS/POSHomePage.vue'
-import ShowtimeSelectPage from '../pages/POS/ShowtimeSelectPage.vue'
-import SeatSelectPage from '../pages/POS/SeatSelectPage.vue'
-import PaymentPage from '../pages/POS/PaymentPage.vue'
+import POSHomePage from '../views/pos/POSHomePage.vue'
+import ShowtimeSelectPage from '../views/pos/ShowtimeSelectPage.vue'
+import SeatSelectPage from '../views/pos/SeatSelectPage.vue'
+import PaymentPage from '../views/pos/PaymentPage.vue'
 
 const routes = [
   {
@@ -156,18 +156,6 @@ const routes = [
     name: 'SocialTest',
     component: () => import('../pages/SocialLoginTest.vue')
   },
-  // Mount external demo routes under /x for safe access
-  {
-    path: '/x',
-    component: () => import('../external/layout/MainLayout.vue'),
-    children: [
-      { path: '', name: 'XHome', component: () => import('../external/views/customer/HomePage.vue') },
-      { path: 'booking', name: 'XBooking', component: () => import('../external/views/customer/BookingPage.vue') },
-      { path: 'showtimes', name: 'XShowtimes', component: () => import('../external/pages/USER/ShowtimesPage.vue') },
-      { path: 'movie/:id', name: 'XMovieDetail', component: () => import('../external/pages/MovieDetailPage.vue'), props: true },
-      { path: 'admin', name: 'XAdmin', component: () => import('../external/layout/AdminLayout.vue') },
-    ]
-  }
 ]
 
 const router = createRouter({

@@ -223,8 +223,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getAvatarUrl } from '../services/avatarService'
-import AvatarModal from '../components/AvatarModal.vue'
-import ChangePasswordModal from '../components/ChangePasswordModal.vue'
+import AvatarModal from '../components/modals/AvatarModal.vue'
+import ChangePasswordModal from '../components/modals/ChangePasswordModal.vue'
 
 const router = useRouter()
 const route = useRoute()

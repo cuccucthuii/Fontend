@@ -14,7 +14,7 @@
   
   <script setup>
   import { ref } from 'vue'
-import POSSidebar from '../components/POSSidebar.vue'
+import POSSidebar from '../components/layout/POSSideBar.vue'
   
   const isCollapsed = ref(false)
   

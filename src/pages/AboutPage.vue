@@ -211,9 +211,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import AuthModal from '@/components/AuthModal.vue'
-import HomeFooter from '@/components/HomeFooter.vue'
-import Header from '@/components/Header.vue'
+import AuthModal from '../components/modals/AuthModal.vue'
+import HomeFooter from '../components/layout/HomeFooter.vue'
+import Header from '../components/layout/Header.vue'
 
 // Login state management
 const isLoggedIn = ref(false)

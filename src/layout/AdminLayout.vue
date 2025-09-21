@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import SidebarMenu from '../components/SidebarMenu.vue'
+import SidebarMenu from '../components/layout/SidebarMenu.vue'
 import { onMounted, ref } from 'vue'
 
 onMounted(() => {

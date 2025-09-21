@@ -347,12 +347,7 @@
       @close="showTrailerModal = false"
     />
 
-    <!-- Modal thêm phim -->
-    <AddMovieModal
-      :show="showAddModal"
-      @close="onCloseModal"
-      @saved="onSaved"
-    />
+    <!-- Modal thêm phim - Component đã bị xóa -->
 
     <!-- Modal Chỉnh sửa Phim -->
     <transition name="modal-fade">
@@ -506,7 +501,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { fetchMovies, deleteMovie, updateMovie, addMovie } from '../services/movieService'
 import TrailerModal from './TrailerModal.vue'
-import AddMovieModal from '../external/components/AddMovieModal.vue'
+// import AddMovieModal from '../external/components/AddMovieModal.vue' // File đã bị xóa
 import * as XLSX from 'xlsx'
 
 const movies = ref([])

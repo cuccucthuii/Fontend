@@ -283,7 +283,7 @@ import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchMovies, fetchGenres, getMovieById } from '../services/movieService'
 import { API_BASE_URL } from '../services/api'
-import Header from '@/components/Header.vue'
+import Header from '../components/layout/Header.vue'
 
 const route = useRoute()
 const router = useRouter()

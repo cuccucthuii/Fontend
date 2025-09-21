@@ -16,9 +16,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import SidebarMenu from '../components/SidebarMenu.vue'
-import HomeFooter from '../components/HomeFooter.vue'
-import Header from '../components/Header.vue'
+import SidebarMenu from '../components/layout/SidebarMenu.vue'
+import HomeFooter from '../components/layout/HomeFooter.vue'
+import Header from '../components/layout/Header.vue'
 
 const isCollapsed = ref(false)
 

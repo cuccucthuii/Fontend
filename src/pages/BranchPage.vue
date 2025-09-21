@@ -152,7 +152,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchBranches, deleteBranch, updateBranch, createBranch } from '../services/branchService'
-import BranchForm from '../components/BranchForm.vue'
+import BranchForm from '../components/forms/BranchForm.vue'
 
 const branches = ref([])
 const currentPage = ref(1)

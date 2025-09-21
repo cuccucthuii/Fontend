@@ -1,13 +1,21 @@
 <template>
-  <Header />
+  <Header :is-logged-in="isLoggedIn" :user-info="userInfo" />
+  
+  <!-- Auth Modal -->
+  <AuthModal 
+    :show="showAuthModal" 
+    @close="showAuthModal = false"
+    @login-success="handleLoginSuccess"
+  />
+  
   <div class="booking-bg" :style="backgroundStyle">
     <div class="booking-page dark-mode">
       <h1 class="booking-title">🎟️ Đặt vé online</h1>
       <!-- Stepper -->
       <div class="stepper">
-        <div :class="['step', step >= 1 ? 'active' : '']"><span class="step-icon">①</span> Chọn suất</div>
-        <div :class="['step', step >= 2 ? 'active' : '']"><span class="step-icon">②</span> Chọn ghế</div>
-        <div :class="['step', step === 3 ? 'active' : '']"><span class="step-icon">③</span> Thông tin</div>
+        <div v-if="!hasCompleteBookingInfo" :class="['step', step >= 1 ? 'active' : '']"><span class="step-icon">①</span> Chọn suất</div>
+        <div :class="['step', step >= 2 ? 'active' : '']"><span class="step-icon">{{ hasCompleteBookingInfo ? '①' : '②' }}</span> Chọn ghế</div>
+        <div :class="['step', step === 3 ? 'active' : '']"><span class="step-icon">{{ hasCompleteBookingInfo ? '②' : '③' }}</span> Thông tin</div>
       </div>
       <!-- Step 1: Chọn phim, rạp, ngày, suất chiếu -->
       <section class="booking-step dark-box" v-show="step === 1">
@@ -58,9 +66,19 @@
             <span :class="{ 'timer-warning': countdown <= 60 }">{{ countdownDisplay }}</span>
           </div>
         </div>
+        
+        
         <div class="seat-map">
           <div class="screen">Màn hình</div>
-          <div class="seats">
+          
+          <!-- Loading state -->
+          <div v-if="loadingSeats" class="loading-seats">
+            <div class="loading-spinner"></div>
+            <p>Đang tải sơ đồ ghế...</p>
+          </div>
+          
+          <!-- Seat grid -->
+          <div v-else class="seats">
             <div v-for="row in seatRows" :key="row" class="seat-row">
               <span class="row-label">{{ row }}</span>
               <button v-for="col in seatCols" :key="col" :class="seatClass(row, col)" @click="toggleSeat(row, col)"
@@ -76,7 +94,7 @@
           </div>
         </div>
         <div class="step-actions">
-          <button class="btn-back" type="button" @click="goToStep(1)">&larr; Quay lại</button>
+          <button class="btn-back" type="button" @click="goBack">&larr; Quay lại</button>
           <button class="btn-next" type="button" :disabled="!selectedSeats.length" @click="goToStep(3)">Tiếp tục
             &rarr;</button>
         </div>
@@ -115,40 +133,118 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import { fetchMovies } from '@/services/movieService'
 import { fetchSchedules } from '@/services/scheduleService'
+import { fetchSeatMap, fetchSeatAvailability, holdSeats, confirmSeats, releaseSeats } from '@/services/seatService'
 import { useRoute } from 'vue-router'
-import Header from '@/components/Header.vue'
-import HomeFooter from '@/components/HomeFooter.vue'
+import Header from '../../components/layout/Header.vue'
+import HomeFooter from '../../components/layout/HomeFooter.vue'
+import AuthModal from '../../components/modals/AuthModal.vue'
 const route = useRoute()
 const form = ref({ movie: '', branch: '', date: '', time: '' })
+const scheduleId = ref('')
+
+// Trạng thái đăng nhập
+const isLoggedIn = ref(false)
+const userInfo = ref({})
+const showAuthModal = ref(false)
+
+// Kiểm tra trạng thái đăng nhập
+function checkLoginStatus() {
+  try {
+    const token = localStorage.getItem('token')
+    const user = localStorage.getItem('userInfo')
+    
+    if (token && user) {
+      isLoggedIn.value = true
+      userInfo.value = JSON.parse(user)
+      console.log('✅ User logged in:', userInfo.value)
+    } else {
+      isLoggedIn.value = false
+      userInfo.value = {}
+      console.log('❌ User not logged in')
+    }
+  } catch (error) {
+    console.error('❌ Error checking login status:', error)
+    isLoggedIn.value = false
+    userInfo.value = {}
+  }
+}
+
+// Gọi khi component mount
+onMounted(() => {
+  checkLoginStatus()
+})
+
+// Lắng nghe thay đổi localStorage để cập nhật trạng thái đăng nhập
+window.addEventListener('storage', (e) => {
+  if (e.key === 'token' || e.key === 'userInfo') {
+    checkLoginStatus()
+  }
+})
+
+// Lắng nghe custom event từ AuthModal
+window.addEventListener('login-success', () => {
+  checkLoginStatus()
+})
+
+window.addEventListener('logout-success', () => {
+  checkLoginStatus()
+})
+
+// Xử lý login success
+function handleLoginSuccess() {
+  checkLoginStatus()
+  showAuthModal.value = false
+}
 // Lấy danh sách phim từ backend
 const allMovies = ref([])
 const movies = ref([])
 async function loadMovies() {
   try {
+    console.log('🔄 Loading movies...')
     const res = await fetchMovies()
+    console.log('🎬 Movies response:', res)
     allMovies.value = res.data.data || res.data || []
+    console.log('✅ Movies loaded:', allMovies.value)
     filterMoviesByBranch()
   } catch (e) {
     allMovies.value = []
     movies.value = []
+    console.error('❌ Error loading movies:', e)
   }
 }
 loadMovies()
 
 function filterMoviesByBranch() {
+  console.log('🔍 filterMoviesByBranch called with branch:', form.value.branch)
+  console.log('📊 schedules.value:', schedules.value)
+  console.log('📊 allMovies.value:', allMovies.value)
+  
   if (!form.value.branch) {
     movies.value = allMovies.value
     return
   }
+  
+  // Kiểm tra schedules.value có phải là array không
+  if (!schedules.value || !Array.isArray(schedules.value)) {
+    console.warn('⚠️ schedules.value is not an array:', schedules.value)
+    movies.value = allMovies.value
+    return
+  }
+  
   // Lọc các suất chiếu theo branchId
   const branchSchedules = schedules.value.filter(sch => sch.branchId == form.value.branch || sch.rapChieuId == form.value.branch)
+  console.log('🎬 branchSchedules:', branchSchedules)
+  
   // Lấy id phim từ các suất chiếu này
   const movieIds = [...new Set(branchSchedules.map(sch => sch.movieId || sch.phimId))]
+  console.log('🎭 movieIds:', movieIds)
+  
   // Lọc phim từ allMovies
   movies.value = allMovies.value.filter(m => movieIds.includes(m.id) || movieIds.includes(m.idPhim))
+  console.log('✅ Filtered movies:', movies.value)
 }
 
 watch(() => form.value.branch, () => {
@@ -161,13 +257,128 @@ watch(() => form.value.branch, () => {
 const schedules = ref([])
 async function loadSchedules() {
   try {
+    console.log('🔄 Loading schedules...')
     const res = await fetchSchedules()
+    console.log('📅 Schedules response:', res)
     schedules.value = res.data.data || res.data || []
+    console.log('✅ Schedules loaded:', schedules.value)
   } catch (e) {
     schedules.value = []
+    console.error('❌ Error loading schedules:', e)
   }
 }
 loadSchedules()
+
+// Load ghế từ database
+async function loadSeats() {
+  if (!scheduleId.value) {
+    console.log('❌ No scheduleId, cannot load seats')
+    return
+  }
+  
+  try {
+    loadingSeats.value = true
+    
+    // Làm sạch scheduleId (loại bỏ ký tự không mong muốn)
+    const cleanScheduleId = String(scheduleId.value).replace(/[^0-9]/g, '')
+    console.log('🔄 Loading seats for showTime:', cleanScheduleId)
+    console.log('🔍 Original scheduleId:', scheduleId.value)
+    
+    // Gọi API để lấy sơ đồ ghế
+    const seatMapResponse = await fetchSeatMap(cleanScheduleId)
+    console.log('🗺️ Seat map response:', seatMapResponse)
+    
+    // Gọi API để lấy trạng thái ghế
+    const availabilityResponse = await fetchSeatAvailability(cleanScheduleId)
+    console.log('📊 Seat availability response:', availabilityResponse)
+    
+    // Kết hợp dữ liệu sơ đồ và trạng thái
+    const seatMap = seatMapResponse.data.data || seatMapResponse.data || []
+    const availability = availabilityResponse.data.data || availabilityResponse.data || []
+    
+    // Merge dữ liệu
+    seats.value = seatMap.map(seat => {
+      const avail = availability.find(a => a.seatId === seat.id || a.hangGhe === seat.hangGhe && a.soGhe === seat.soGhe)
+      return {
+        ...seat,
+        trangThai: avail ? avail.trangThai : 'CO_SAN',
+        giaVe: avail ? avail.giaVe : seat.giaVe || seatPrice
+      }
+    })
+    
+    console.log('✅ Seats loaded:', seats.value)
+    
+    // Tạo danh sách hàng và cột từ dữ liệu ghế
+    const rows = [...new Set(seats.value.map(seat => seat.hangGhe))].sort()
+    const cols = [...new Set(seats.value.map(seat => seat.soGhe))].sort()
+    
+    seatRows.value = rows
+    seatCols.value = cols
+    
+    console.log('📊 Seat rows:', seatRows.value)
+    console.log('📊 Seat cols:', seatCols.value)
+    
+  } catch (error) {
+    console.error('❌ Error loading seats:', error)
+    
+    // Fallback: sử dụng dữ liệu mẫu để test
+    console.log('🔄 Using fallback seat data for testing')
+    seats.value = generateFallbackSeats()
+    
+    // Tạo danh sách hàng và cột từ dữ liệu fallback
+    const rows = [...new Set(seats.value.map(seat => seat.hangGhe))].sort()
+    const cols = [...new Set(seats.value.map(seat => seat.soGhe))].sort()
+    
+    seatRows.value = rows
+    seatCols.value = cols
+    
+    console.log('📊 Fallback seat rows:', seatRows.value)
+    console.log('📊 Fallback seat cols:', seatCols.value)
+  } finally {
+    loadingSeats.value = false
+  }
+}
+
+// Tạo dữ liệu ghế mẫu để test
+function generateFallbackSeats() {
+  const rows = ['A', 'B', 'C', 'D', 'E']
+  const cols = [1, 2, 3, 4, 5, 6, 7, 8]
+  const seats = []
+  
+  rows.forEach(row => {
+    cols.forEach(col => {
+      // Xác định loại ghế dựa trên vị trí
+      let loaiGhe = 'THUONG'
+      let giaVe = SEAT_PRICES.THUONG
+      
+      // 2 hàng cuối (D, E) = VIP
+      if (row === 'D' || row === 'E') {
+        loaiGhe = 'VIP'
+        giaVe = SEAT_PRICES.VIP
+      }
+      
+      // 2 cột cuối (7, 8) = Ghế đôi
+      if (col === 7 || col === 8) {
+        loaiGhe = 'COUPLE'
+        giaVe = SEAT_PRICES.COUPLE
+      }
+      
+      seats.push({
+        id: `${row}${col}`,
+        hangGhe: row,
+        soGhe: col,
+        loaiGhe: loaiGhe,
+        trangThai: 'CO_SAN', // Tất cả ghế đều có sẵn
+        giaVe: giaVe
+      })
+    })
+  })
+  
+  console.log('🎭 Generated fallback seats:', seats.length)
+  console.log('💰 Seat prices:', SEAT_PRICES)
+  return seats
+}
+
 const branches = [
   { id: 1, name: 'Cinema Center Hà Nội' },
   { id: 2, name: 'Cinema Center Sài Gòn' },
@@ -178,38 +389,173 @@ const availableTimes = computed(() => form.value.movie && form.value.branch && f
 // Disable select phim nếu có movieId trên query
 const isMovieLocked = computed(() => !!route.query.movieId)
 
-// Stepper
-const step = ref(1)
-function goToStep(n) {
+// Kiểm tra xem có thể bỏ qua bước chọn suất chiếu không
+const canSkipShowtimeStep = computed(() => {
+  const cinemaId = route.query.cinemaId || route.query.cinemald
+  const canSkip = route.query.scheduleId && route.query.movieId && cinemaId && route.query.date && route.query.time
+  console.log('🔍 canSkipShowtimeStep check:', {
+    scheduleId: route.query.scheduleId,
+    movieId: route.query.movieId,
+    cinemaId: cinemaId,
+    date: route.query.date,
+    time: route.query.time,
+    canSkip
+  })
+  return canSkip
+})
+
+// Kiểm tra có đủ thông tin booking không
+const hasCompleteBookingInfo = computed(() => {
+  return canSkipShowtimeStep.value
+})
+
+// Stepper - bắt đầu từ step 2 nếu có đủ thông tin
+const step = ref(hasCompleteBookingInfo.value ? 2 : 1)
+async function goToStep(n) {
   if (n === 2 && !canSelectSeats.value) return
   if (n === 3 && !selectedSeats.value.length) return
+  
+  // Nếu chuyển từ bước 2 sang bước 3, xác nhận ghế
+  if (step.value === 2 && n === 3) {
+    try {
+      await confirmSelectedSeats()
+    } catch (error) {
+      console.error('❌ Error confirming seats:', error)
+      return // Không chuyển bước nếu xác nhận thất bại
+    }
+  }
+  
   step.value = n
-  if (n === 2) startCountdown()
-  else stopCountdown()
+  if (n === 2) {
+    startCountdown()
+    // Load ghế khi chuyển sang bước chọn ghế
+    loadSeats()
+  } else {
+    stopCountdown()
+  }
 }
 
-// Sơ đồ ghế (A1-A8, B1-B8, ...)
-const seatRows = ['A', 'B', 'C', 'D', 'E']
-const seatCols = [1, 2, 3, 4, 5, 6, 7, 8]
-const bookedSeats = ref(['A2', 'A3', 'B5', 'C7', 'D1'])
-const selectedSeats = ref([])
-const seatPrice = 75000
+// Xử lý nút quay lại
+function goBack() {
+  if (hasCompleteBookingInfo.value) {
+    // Nếu đã skip step 1, quay về trang showtimes
+    window.history.back()
+  } else {
+    // Nếu chưa skip, quay về step 1
+    goToStep(1)
+  }
+}
+
+// Xác nhận ghế đã chọn
+async function confirmSelectedSeats() {
+  if (!selectedSeats.value.length) return
+  
+  const cleanScheduleId = String(scheduleId.value).replace(/[^0-9]/g, '')
+  const confirmData = {
+    showTimeId: cleanScheduleId,
+    seats: selectedSeats.value.map(seatId => {
+      const seat = seats.value.find(s => s.hangGhe + s.soGhe === seatId)
+      return {
+        seatId: seat.id,
+        hangGhe: seat.hangGhe,
+        soGhe: seat.soGhe,
+        giaVe: seat.giaVe
+      }
+    })
+  }
+  
+  console.log('✅ Confirming seats:', confirmData)
+  const response = await confirmSeats(confirmData)
+  console.log('🎫 Seats confirmed:', response)
+  return response
+}
+
+// Sơ đồ ghế - lấy từ database
+const seats = ref([]) // Danh sách ghế từ database
+const seatRows = ref([]) // Hàng ghế (A, B, C, D, E...)
+const seatCols = ref([]) // Cột ghế (1, 2, 3, 4, 5, 6, 7, 8...)
+const selectedSeats = ref([]) // Ghế đang được chọn
+// Giá vé mặc định theo loại ghế
+const SEAT_PRICES = {
+  THUONG: 50000,    // Ghế thường
+  VIP: 80000,       // Ghế VIP  
+  COUPLE: 120000    // Ghế đôi
+}
+const seatPrice = SEAT_PRICES.THUONG // Giá mặc định
+const loadingSeats = ref(false)
 const canSelectSeats = computed(() => form.value.movie && form.value.branch && form.value.date && form.value.time)
 function seatClass(row, col) {
-  const seat = row + col
-  if (bookedSeats.value.includes(seat)) return 'seat seat-booked'
-  if (selectedSeats.value.includes(seat)) return 'seat seat-selected'
+  const seatId = row + col
+  const seat = seats.value.find(s => s.hangGhe === row && s.soGhe === col)
+  
+  if (!seat) {
+    console.log(`❌ Seat ${seatId} not found`)
+    return 'seat seat-disabled'
+  }
+  
+  if (seat.trangThai === 'DA_DAT' || seat.trangThai === 'DANG_SU_DUNG') {
+    console.log(`🔴 Seat ${seatId} is booked`)
+    return 'seat seat-booked'
+  }
+  
+  if (selectedSeats.value.includes(seatId)) {
+    console.log(`🔵 Seat ${seatId} is selected`)
+    return 'seat seat-selected'
+  }
+  
+  console.log(`⚪ Seat ${seatId} is available`)
   return 'seat seat-available'
 }
 function isSeatBooked(row, col) {
-  return bookedSeats.value.includes(row + col)
+  const seat = seats.value.find(s => s.hangGhe === row && s.soGhe === col)
+  return seat && (seat.trangThai === 'DA_DAT' || seat.trangThai === 'DANG_SU_DUNG')
 }
-function toggleSeat(row, col) {
-  const seat = row + col
+
+async function toggleSeat(row, col) {
+  const seatId = row + col
   if (isSeatBooked(row, col)) return
-  const idx = selectedSeats.value.indexOf(seat)
-  if (idx === -1) selectedSeats.value.push(seat)
-  else selectedSeats.value.splice(idx, 1)
+  
+  const seat = seats.value.find(s => s.hangGhe === row && s.soGhe === col)
+  if (!seat) return
+  
+  const idx = selectedSeats.value.indexOf(seatId)
+  
+  try {
+    if (idx === -1) {
+      // Chọn ghế - gọi API giữ ghế
+      const cleanScheduleId = String(scheduleId.value).replace(/[^0-9]/g, '')
+      const holdData = {
+        showTimeId: cleanScheduleId,
+        seatId: seat.id,
+        hangGhe: row,
+        soGhe: col
+      }
+      
+      console.log('🔒 Holding seat:', holdData)
+      await holdSeats(holdData)
+      
+      selectedSeats.value.push(seatId)
+      console.log(`✅ Seat ${seatId} selected and held`)
+    } else {
+      // Bỏ chọn ghế - gọi API hủy giữ
+      const cleanScheduleId = String(scheduleId.value).replace(/[^0-9]/g, '')
+      const releaseData = {
+        showTimeId: cleanScheduleId,
+        seatId: seat.id,
+        hangGhe: row,
+        soGhe: col
+      }
+      
+      console.log('🔓 Releasing seat:', releaseData)
+      await releaseSeats(releaseData)
+      
+      selectedSeats.value.splice(idx, 1)
+      console.log(`❌ Seat ${seatId} deselected and released`)
+    }
+  } catch (error) {
+    console.error('❌ Error toggling seat:', error)
+    // Có thể hiển thị thông báo lỗi cho user
+  }
 }
 
 // Countdown chọn ghế
@@ -238,7 +584,37 @@ function stopCountdown() {
   if (countdownInterval) clearInterval(countdownInterval)
   countdownInterval = null
 }
-onUnmounted(stopCountdown)
+onUnmounted(() => {
+  stopCountdown()
+  // Hủy giữ tất cả ghế đã chọn khi thoát trang
+  releaseAllSeats()
+})
+
+// Hủy giữ tất cả ghế đã chọn
+async function releaseAllSeats() {
+  if (!selectedSeats.value.length) return
+  
+  try {
+    const cleanScheduleId = String(scheduleId.value).replace(/[^0-9]/g, '')
+    const releaseData = {
+      showTimeId: cleanScheduleId,
+      seats: selectedSeats.value.map(seatId => {
+        const seat = seats.value.find(s => s.hangGhe + s.soGhe === seatId)
+        return {
+          seatId: seat.id,
+          hangGhe: seat.hangGhe,
+          soGhe: seat.soGhe
+        }
+      })
+    }
+    
+    console.log('🔓 Releasing all seats:', releaseData)
+    await releaseSeats(releaseData)
+    console.log('✅ All seats released')
+  } catch (error) {
+    console.error('❌ Error releasing seats:', error)
+  }
+}
 
 // Thông tin vé & khách hàng
 // selectedMovie: luôn lấy từ allMovies theo movieId
@@ -247,7 +623,15 @@ const selectedMovie = computed(() => {
   return allMovies.value.find(m => String(m.id) === String(movieId) || String(m.idPhim) === String(movieId))
 })
 const selectedBranch = computed(() => branches.find(b => b.id === form.value.branch))
-const totalPrice = computed(() => selectedSeats.value.length * seatPrice)
+const totalPrice = computed(() => {
+  return selectedSeats.value.reduce((total, seatId) => {
+    const seat = seats.value.find(s => s.hangGhe + s.soGhe === seatId)
+    if (seat) {
+      return total + (seat.giaVe || SEAT_PRICES[seat.loaiGhe] || SEAT_PRICES.THUONG)
+    }
+    return total + SEAT_PRICES.THUONG
+  }, 0)
+})
 const customer = ref({ name: '', phone: '', email: '' })
 
 // Toast
@@ -300,22 +684,78 @@ const backgroundStyle = computed(() => {
   }
 })
 
+// Tự động điền form từ URL parameters
+function autoFillFormFromQuery() {
+  console.log('🔄 autoFillFormFromQuery called')
+  const query = route.query
+  console.log('📋 Query params:', query)
+  console.log('🔗 Current URL:', window.location.href)
+  
+  // Điền movieId
+  if (query.movieId && allMovies.value.length) {
+    const found = allMovies.value.find(m => String(m.id) === String(query.movieId) || String(m.idPhim) === String(query.movieId))
+    if (found) {
+      form.value.movie = String(found.id ?? found.idPhim)
+      console.log('🎬 Movie set:', form.value.movie)
+    }
+  }
+  
+  // Điền cinemaId (xử lý cả cinemaId và cinemald)
+  const cinemaId = query.cinemaId || query.cinemald
+  if (cinemaId) {
+    form.value.branch = String(cinemaId)
+    console.log('🏢 Branch set:', form.value.branch)
+  }
+  
+  // Điền date
+  if (query.date) {
+    form.value.date = String(query.date)
+    console.log('📅 Date set:', form.value.date)
+  }
+  
+  // Điền time
+  if (query.time) {
+    form.value.time = String(query.time)
+    console.log('⏰ Time set:', form.value.time)
+  }
+  
+  // Điền scheduleId
+  if (query.scheduleId) {
+    scheduleId.value = String(query.scheduleId)
+    console.log('🎫 ScheduleId set:', scheduleId.value)
+  }
+  
+  // Nếu có đủ thông tin, load ghế ngay lập tức
+  console.log('🔍 Checking canSkipShowtimeStep:', canSkipShowtimeStep.value)
+  if (canSkipShowtimeStep.value) {
+    console.log('🚀 Auto-loading seats for pre-selected showtime')
+    startCountdown()
+    // Load ghế khi có đủ thông tin
+    loadSeats()
+  } else {
+    console.log('❌ Cannot skip showtime step, staying at step 1')
+  }
+}
+
 // Khi có movieId trên query, luôn set form.movie nếu tìm thấy trong allMovies
 watch([
   () => allMovies.value,
-  () => route.query.movieId
-], ([moviesArr, movieId]) => {
-  console.log('BookingPage - movieId from query:', movieId)
+  () => route.query
+], ([moviesArr, query]) => {
+  console.log('BookingPage - query params:', query)
   console.log('BookingPage - allMovies length:', moviesArr.length)
-  if (movieId && moviesArr.length) {
-    const found = moviesArr.find(m => String(m.id) === String(movieId) || String(m.idPhim) === String(movieId))
-    console.log('BookingPage - found movie:', found)
-    if (found) {
-      form.value.movie = String(found.id ?? found.idPhim)
-      console.log('BookingPage - set form.movie to:', form.value.movie)
-    }
+  
+  if (moviesArr.length) {
+    autoFillFormFromQuery()
   }
 }, { immediate: true })
+
+// Theo dõi thay đổi route để tự động điền form
+watch(() => route.query, () => {
+  if (allMovies.value.length) {
+    autoFillFormFromQuery()
+  }
+}, { deep: true })
 </script>
 
 <style scoped>
@@ -330,7 +770,7 @@ watch([
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 16px 80px 16px;
-  background: rgba(24, 25, 26, 0.92);
+  background: rgba(24, 25, 26, 0.95);
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #fff;
@@ -338,6 +778,8 @@ watch([
   box-shadow: 0 8px 48px 0 #48dbfb33, 0 1.5px 8px #23252655;
   position: relative;
   z-index: 1;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(72, 219, 251, 0.1);
 }
 
 .booking-title {
@@ -440,11 +882,15 @@ watch([
 }
 
 .booking-form {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 24px;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: end;
   margin-bottom: 8px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  border: 1px solid rgba(72, 219, 251, 0.1);
 }
 
 .form-group {
@@ -463,15 +909,23 @@ watch([
 
 .booking-form select,
 .booking-form input[type="date"] {
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
   border: 2px solid #232526;
   font-size: 15px;
   background: #18191a;
   color: #fff;
   min-width: 160px;
-  transition: border 0.2s, background 0.2s;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(72, 219, 251, 0.08);
+  position: relative;
+}
+
+.booking-form select:hover,
+.booking-form input[type="date"]:hover {
+  border-color: rgba(72, 219, 251, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(72, 219, 251, 0.15);
 }
 
 .booking-form select:focus,
@@ -479,6 +933,8 @@ watch([
   border-color: #48dbfb;
   outline: none;
   background: #232526;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(72, 219, 251, 0.25);
 }
 
 .booking-form option {
@@ -488,7 +944,7 @@ watch([
 
 .btn-next,
 .btn-back {
-  padding: 12px 32px;
+  padding: 14px 36px;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 700;
@@ -497,9 +953,22 @@ watch([
   color: #fff;
   margin-top: 18px;
   margin-right: 12px;
-  box-shadow: 0 2px 8px #48dbfb22;
+  box-shadow: 0 4px 16px rgba(72, 219, 251, 0.3);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-next:hover,
+.btn-back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(72, 219, 251, 0.4);
+}
+
+.btn-next:active,
+.btn-back:active {
+  transform: translateY(0);
 }
 
 .btn-back {
@@ -560,24 +1029,27 @@ watch([
 }
 
 .seat {
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   border: none;
   font-size: 15px;
   font-weight: 700;
-  margin: 0 2px;
+  margin: 0 3px;
   background: #232526;
   color: #fff;
-  box-shadow: 0 2px 8px #48dbfb22;
+  box-shadow: 0 3px 12px rgba(72, 219, 251, 0.2);
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .seat-available:hover {
   background: #48dbfb;
   color: #232526;
-  transform: scale(1.08);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(72, 219, 251, 0.4);
 }
 
 .seat-booked {
@@ -711,6 +1183,37 @@ watch([
   letter-spacing: 1px;
 }
 
+/* Loading state cho ghế */
+.loading-seats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #b2bec3;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #232526;
+  border-top: 4px solid #48dbfb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-seats p {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .booking-page.dark-mode {
     max-width: 100vw;
@@ -745,6 +1248,19 @@ watch([
 
   .step-header {
     font-size: 17px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .info-card {
+    padding: 16px;
+  }
+  
+  .info-card h3 {
+    font-size: 18px;
   }
 }
 </style>

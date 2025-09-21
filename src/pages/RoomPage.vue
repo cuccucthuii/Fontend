@@ -191,7 +191,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { fetchRooms, fetchTrashRooms, deleteRoom, softDeleteRoom, restoreRoom, permanentlyDeleteRoom, createRoom, updateRoom } from '../services/roomService'
-import RoomForm from '../components/RoomForm.vue'
+import RoomForm from '../components/forms/RoomForm.vue'
 import * as XLSX from 'xlsx'
 
 const rooms = ref([])

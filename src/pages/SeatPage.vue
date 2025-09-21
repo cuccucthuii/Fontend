@@ -184,7 +184,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchSeats, createSeat, updateSeat } from '../services/seatService'
-import SeatForm from '../components/SeatForm.vue'
+import SeatForm from '../components/forms/SeatForm.vue'
 
 const seats = ref([])
 const currentPage = ref(1)
