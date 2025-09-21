@@ -9,7 +9,7 @@ import lombok.Builder;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.validation.constraints.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiGheNgoi;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 import java.math.BigDecimal;
 
@@ -44,7 +44,7 @@ public class SeatDTO {
 
     @NotNull(message = "Trạng thái ghế không được null")
     @Enumerated(EnumType.STRING)
-    private TrangThaiGheNgoi trangThai;
+    private TrangThai trangThai;
 
     @NotBlank(message = "Loại ghế không được để trống")
     private String loaiGhe;

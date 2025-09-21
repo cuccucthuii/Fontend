@@ -15,4 +15,5 @@ public class EmployeeDto {
     private String trangThai;
     private LocalDate ngayVaoLam;
     private Integer idRapChieu;
+    private String chucVu;
 }

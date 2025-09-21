@@ -4,10 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.cinema_reservation_system.dto.employee.AddEmployeeDto;
 import org.example.cinema_reservation_system.dto.employee.EmployeeDto;
-import org.example.cinema_reservation_system.repository.employee.EmployeeRepository;
-import org.example.cinema_reservation_system.service.EmployeeService;
+import org.example.cinema_reservation_system.repository.staff.StaffRepository;
+import org.example.cinema_reservation_system.service.employee.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,13 +21,14 @@ import java.util.List;
 public class EmployeeController {
 
     @Autowired
-    private EmployeeRepository employeeRepository;
+    private StaffRepository staffRepository;
 
     @Autowired
     private EmployeeService employeeService;
 
     // Tạo mới nhân viên
     @PostMapping("/addEmployee")
+    @PreAuthorize("hasRole('ADMIN')")
     public EmployeeDto createEmployee(@RequestBody @Valid AddEmployeeDto dto) {
         return employeeService.createEmployee(dto);
     }
@@ -39,6 +41,7 @@ public class EmployeeController {
 
     // Lấy tất cả nhân viên
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<EmployeeDto> getAllNhanVien() {
         return employeeService.getAllEmployees();
     }
@@ -59,19 +62,18 @@ public class EmployeeController {
     // Kiểm tra trùng email
     @GetMapping("/check-email")
     public boolean findByEmail(@RequestParam String email) {
-        return employeeRepository.findByEmail(email) != null;
+       return staffRepository.findByEmail(email);
     }
 
     // Kiểm tra trùng CCCD
     @GetMapping("/check-cccd")
     public boolean findByCccd(@RequestParam String cccd) {
-        return employeeRepository.findByCccd(cccd) != null;
-    }
+        return staffRepository.findByCccd(cccd);}
 
     // Kiểm tra trùng số điện thoại
     @GetMapping("/check-sdt")
     public boolean findBySoDienThoai(@RequestParam String soDienThoai) {
-        return employeeRepository.findBySoDienThoai(soDienThoai) != null;
+        return staffRepository.findBySoDienThoaiNhanVien(soDienThoai);
     }
 
 }

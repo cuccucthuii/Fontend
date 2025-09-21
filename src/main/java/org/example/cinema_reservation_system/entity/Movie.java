@@ -6,12 +6,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import lombok.ToString;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiPhim;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -26,7 +27,7 @@ public class Movie {
     @Column(name = "id_phim")
     private Integer idPhim;
 
-    @Column(name = "ten_phim", nullable = false, unique = true, length = 100)
+    @Column(name = "ten_phim", nullable = false, length = 100)
     private String tenPhim;
 
     @Column(name = "mo_ta")
@@ -40,7 +41,7 @@ public class Movie {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiPhim trangThai = TrangThaiPhim.NGUNG_CHIEU;
+    private TrangThai trangThai = TrangThai.NGUNG_CHIEU;
 
     @Column(name = "dinh_dang", nullable = false, length = 50)
     @Pattern(regexp = "2D|3D|4D|IMAX", message = "Định dạng phải là 2D, 3D, 4D hoặc IMAX")
@@ -110,5 +111,52 @@ public class Movie {
             inverseJoinColumns = @JoinColumn(name = "id_dien_vien")
     )
     private Set<Actor> dienVienList;
+
+
+    // Thêm trường cho soft delete
+    @Column(name = "da_xoa", nullable = false)
+    private Boolean daXoa = false;
+
+    @Column(name = "ngay_xoa")
+    private LocalDateTime ngayXoa;
+
+    // Relationships
+    @OneToMany(mappedBy = "phim", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ShowTime> lichChieu;
+
+    @OneToMany(mappedBy = "phim", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<MovieReview> danhGia;
+
+    // Helper methods for soft delete
+    public void softDelete() {
+        this.daXoa = true;
+        this.ngayXoa = LocalDateTime.now();
+        this.ngayCapNhat = LocalDateTime.now();
+    }
+
+    public void restore() {
+        this.daXoa = false;
+        this.ngayXoa = null;
+        this.ngayCapNhat = LocalDateTime.now();
+    }
+
+//    public boolean isDeleted() {
+//        return this.daXoa != null && this.daXoa;
+//    }
+
+//    @PrePersist
+//    protected void onCreate() {
+//        ngayTao = LocalDateTime.now();
+//        ngayCapNhat = LocalDateTime.now();
+//        if (daXoa == null) {
+//            daXoa = false;
+//        }
+//    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        ngayCapNhat = LocalDateTime.now();
+    }
+
 
 }

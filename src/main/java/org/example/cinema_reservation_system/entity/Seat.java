@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiGheNgoi;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -41,7 +41,7 @@ public class Seat {
     @NotNull(message = "Trạng thái ghế không được null")
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiGheNgoi trangThai;
+    private TrangThai trangThai;
 
     @NotBlank(message = "Loại ghế không được để trống")
     @Size(min = 1, max = 50, message = "Loại ghế phải từ 1-50 ký tự")

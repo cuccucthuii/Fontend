@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiPhongChieu;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 @Data
 @NoArgsConstructor
@@ -22,7 +22,7 @@ public class RoomRequestDto { // Add/update
     private Double dienTichPhong;
 
     @NotNull(message = "Trạng thái không được để trống")
-    private TrangThaiPhongChieu trangThaiPhongChieu;
+    private TrangThai trangThaiPhongChieu;
 
     @NotNull(message = "Vui lòng chọn rạp chiếu")
     @Min(value = 1, message = "ID rạp chiếu không hợp lệ")

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận đặt vé thành công</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .transaction-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b6b;
+        }
+        .booking-code {
+            background-color: #ffffff;
+            border: 2px solid #ff6b6b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px;
+            text-align: center;
+        }
+        .barcode {
+            background-color: #000;
+            color: #fff;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .ticket-details {
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 20px;
+            overflow: hidden;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        .detail-value {
+            font-weight: 500;
+            color: #333;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .customer-info {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            border-radius: 8px;
+            margin: 20px;
+            padding: 15px;
+        }
+        .footer {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .policy {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            margin: 20px;
+            padding: 15px;
+            font-size: 14px;
+        }
+        .contact {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            margin: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="success-icon">🎬</div>
+            <div class="logo">DevCinema</div>
+            <div>Xác nhận đặt vé thành công</div>
+        </div>
+
+        <!-- Transaction Info -->
+        <div class="transaction-info">
+            <div style="margin-bottom: 10px;">
+                <strong>Mã giao dịch:</strong> <span class="highlight" th:text="${booking.maGiaoDich}">TXN123456789</span>
+            </div>
+            <div>
+                <strong>Thời gian:</strong> <span th:text="${#temporals.format(booking.ngayGiaoDich, 'dd/MM/yyyy HH:mm:ss')}">26/08/2025 16:49:32</span>
+            </div>
+        </div>
+
+        <!-- Booking Code -->
+        <div class="booking-code">
+            <h3 style="margin-top: 0; color: #ff6b6b;">Mã đặt vé</h3>
+            <div style="font-size: 24px; font-weight: bold; color: #ff6b6b; margin: 10px 0;" th:text="${booking.maDatVe}">6337652498106002</div>
+            <div class="barcode-container">
+                <img th:src="'data:image/png;base64,' + ${booking.barcodeData}" 
+                     alt="Barcode" 
+                     style="max-width: 100%; height: auto; margin: 10px 0;" />
+                <div class="barcode-text" th:text="${booking.maDatVe}">6337652498106002</div>
+            </div>
+            <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                Đem mã Barcode này đến quầy giao dịch hoặc nhân viên soát vé để nhận vé
+            </p>
+        </div>
+
+        <!-- Ticket Details -->
+        <div class="ticket-details">
+            <div class="detail-row">
+                <span class="detail-label">Thời gian chiếu:</span>
+                <span class="detail-value" th:text="${#temporals.format(booking.thoiGianChieu, 'HH:mm:ss dd/MM/yyyy')}">20:15:00 31/08/2025</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Phim:</span>
+                <span class="detail-value" th:text="${booking.tenPhim}">Mưa Đỏ</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Phòng Chiếu:</span>
+                <span class="detail-value" th:text="${booking.phongChieu}">P4</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Số Vé:</span>
+                <span class="detail-value" th:text="${booking.soVe}">4</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Số Ghế:</span>
+                <span class="detail-value" th:text="${#strings.listJoin(booking.soGhe, ', ')}">104, 103, 106, 105</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Thức ăn kèm:</span>
+                <span class="detail-value" th:text="${booking.thucAnKem}">Không</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Rạp chiếu:</span>
+                <span class="detail-value">
+                    <span class="highlight" th:text="${booking.rapChieu}">DevCinema</span><br>
+                    <span style="font-size: 12px; color: #666;" th:text="${booking.diaChiRap}">123 Đường ABC, Quận 1, TP.HCM</span>
+                </span>
+            </div>
+            <div class="detail-row" style="background-color: #f8f9fa;">
+                <span class="detail-label">Tổng tiền:</span>
+                <span class="total-amount" th:text="${#numbers.formatDecimal(booking.tongTien, 0, 'COMMA', 0, 'POINT')} + ' ₫'">248,000 ₫</span>
+            </div>
+        </div>
+
+        <!-- Customer Info -->
+        <div class="customer-info">
+            <h4 style="margin-top: 0; color: #2d5a2d;">Thông tin người nhận vé</h4>
+            <div style="margin-bottom: 8px;">
+                <strong>Họ và tên:</strong> <span th:text="${booking.tenKhachHang}">Nguyen Thi Minh Anh</span>
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Số điện thoại:</strong> <span th:text="${booking.soDienThoai}">0868215840</span>
+            </div>
+            <div>
+                <strong>Email:</strong> <span th:text="${booking.emailKhachHang}">nguyenminhanh282005@gmail.com</span>
+            </div>
+        </div>
+
+        <!-- Policy -->
+        <div class="policy">
+            <h4 style="margin-top: 0; color: #856404;">Chính sách hoàn/hủy</h4>
+            <p style="margin-bottom: 8px;">• Vé đã thanh toán thành công <strong>KHÔNG ĐƯỢC HOÀN TIỀN</strong> và đổi suất chiếu</p>
+            <p style="margin-bottom: 8px;">• Chỉ được hoàn tiền khi thanh toán thất bại hoặc lỗi hệ thống</p>
+            <p style="margin-bottom: 8px;">• Vui lòng đến rạp trước giờ chiếu 15 phút để làm thủ tục</p>
+            <p style="margin: 0;">• Khi được yêu cầu, vui lòng xuất trình giấy tờ tùy thân để chứng thực độ tuổi</p>
+        </div>
+
+        <!-- Contact -->
+        <div class="contact">
+            <h4 style="margin-top: 0; color: #1976d2;">Liên hệ hỗ trợ</h4>
+            <p style="margin-bottom: 8px;">
+                <strong>Hotline:</strong> 1900 1234
+            </p>
+            <p style="margin-bottom: 8px;">
+                <strong>Email:</strong> support@devcinema.com
+            </p>
+            <p style="margin: 0;">
+                <strong>Website:</strong> <a href="http://localhost:5173" style="color: #1976d2;">devcinema.com</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p style="margin-bottom: 10px;">
+                <strong>Công ty Cổ phần DevCinema</strong>
+            </p>
+            <p style="margin-bottom: 10px; font-size: 12px;">
+                123 Đường ABC, Quận 1, Thành phố Hồ Chí Minh
+            </p>
+            <p style="margin: 0; font-size: 12px;">
+                Email này được gửi từ hệ thống DevCinema. Vui lòng không trả lời email này.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

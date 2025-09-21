@@ -26,4 +26,14 @@ public class TheaterRequestDto {
 
     @Pattern(regexp = "^0[0-9]{9}$", message = "Số điện thoại không hợp lệ")
     private String soDienThoai;
+
+    @Size(max = 100)
+    private String thanhPho;
+
+    @Size(max = 100)
+    private String khuVuc;
+
+    // Tọa độ (tùy chọn). Nếu có, BE lưu để FE tính khoảng cách chính xác
+    private Double latitude;
+    private Double longitude;
 }

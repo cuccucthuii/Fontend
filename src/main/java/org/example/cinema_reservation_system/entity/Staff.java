@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiNhanVien;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -43,13 +43,16 @@ public class Staff {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiNhanVien trangThai = TrangThaiNhanVien.HOAT_DONG;
+    private TrangThai trangThai = TrangThai.HOAT_DONG;
 
     @Column(name = "ngay_vao_lam", nullable = false)
     private LocalDate ngayVaoLam;
 
     @Column(name = "chuc_vu", nullable = false, length = 50)
-    private String chucVu; // "QuanLy", "ThuNgan", "BanVe", "KyThuat", "VeSinh"
+    private String chucVu; // "QuanLy", "ThuNgan", "BanVe", "AI_Support"
+
+    // @Column(name = "loai_nhan_vien", length = 20)
+    // private String loaiNhanVien = "QUAY"; // "QUAY", "AI", "ADMIN"
 
     @Column(name = "luong_co_ban", precision = 15, scale = 2)
     private BigDecimal luongCoBan;

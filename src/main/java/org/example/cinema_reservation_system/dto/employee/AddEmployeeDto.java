@@ -35,4 +35,9 @@ public class AddEmployeeDto {
 
     @NotNull(message = "ID rạp chiếu không được để trống")
     private Integer idRapChieu;
+
+    //thêm mới
+    @NotBlank(message = "Chức vụ không được để trống")
+    @Pattern(regexp = "QuanLy|ThuNgan|BanVe|AI_Support", message = "Chức vụ phải là QuanLy, ThuNgan, BanVe hoặc AI_Support")
+    private String chucVu;
 }

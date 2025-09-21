@@ -45,6 +45,22 @@ public class PhimValidator {
             throw new IllegalArgumentException("Trạng thái phim không được để trống.");
         }
 
+        // Tuổi giới hạn
+        if (dto.getTuoiGioiHan() == null || dto.getTuoiGioiHan().isBlank()) {
+            throw new IllegalArgumentException("Tuổi giới hạn không được để trống.");
+        }
+        if (!dto.getTuoiGioiHan().matches("P|T13|T16|T18")) {
+            throw new IllegalArgumentException("Tuổi giới hạn phải là P, T13, T16 hoặc T18.");
+        }
+
+        // Năm sản xuất cố định từ 2020-2025
+        if (dto.getNamSanXuat() == null) {
+            throw new IllegalArgumentException("Năm sản xuất không được để trống.");
+        }
+        if (dto.getNamSanXuat() < 2020 || dto.getNamSanXuat() > 2025) {
+            throw new IllegalArgumentException("Năm sản xuất phải nằm trong khoảng 2020-2025.");
+        }
+
         if ((dto.getTheLoaiIds() == null || dto.getTheLoaiIds().isEmpty()) &&
                 (dto.getTheLoaiMoi() == null || dto.getTheLoaiMoi().isEmpty())) {
             throw new IllegalArgumentException("Phim phải có ít nhất một thể loại.");

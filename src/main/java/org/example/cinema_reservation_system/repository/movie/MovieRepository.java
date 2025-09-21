@@ -67,4 +67,60 @@ public interface MovieRepository extends JpaRepository<Movie, Integer>, JpaSpeci
     List<Movie> filterPhim(@Param("theLoai") String theLoai,
                            @Param("trangThai") String trangThai);
 
+
+    //thm mới
+    // Tìm phim chưa bị xóa
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = false")
+    List<Movie> findAllActive();
+
+    // Tìm phim đã bị xóa
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = true")
+    List<Movie> findAllDeleted();
+
+    // Tìm phim theo ID chưa bị xóa
+    @Query("SELECT m FROM Movie m WHERE m.idPhim = :id AND m.daXoa = false")
+    Optional<Movie> findActiveById(@Param("id") Integer id);
+
+    // Tìm phim theo ID đã bị xóa
+    @Query("SELECT m FROM Movie m WHERE m.idPhim = :id AND m.daXoa = true")
+    Optional<Movie> findDeletedById(@Param("id") Integer id);
+
+    // Tìm phim theo trạng thái (chưa bị xóa)
+    @Query("SELECT m FROM Movie m WHERE m.trangThai = :trangThai AND m.daXoa = false")
+    List<Movie> findByTrangThaiAndNotDeleted(@Param("trangThai") TrangThaiPhim trangThai);
+
+    // Tìm phim theo thể loại (chưa bị xóa)
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = false AND " +
+            "EXISTS (SELECT 1 FROM m.theLoaiList tl WHERE tl.tenTheLoai = :theLoai)")
+    List<Movie> findByTheLoaiAndNotDeleted(@Param("theLoai") String theLoai);
+
+    // Tìm kiếm phim (chưa bị xóa)
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = false AND " +
+            "(LOWER(m.tenPhim) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(m.moTa) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    List<Movie> searchActiveMovies(@Param("keyword") String keyword);
+
+    // Đếm phim chưa bị xóa
+    @Query("SELECT COUNT(m) FROM Movie m WHERE m.daXoa = false")
+    long countActiveMovies();
+
+    // Đếm phim đã bị xóa
+    @Query("SELECT COUNT(m) FROM Movie m WHERE m.daXoa = true")
+    long countDeletedMovies();
+
+    // Tìm phim trending (chưa bị xóa, có nhiều lượt xem/đánh giá)
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = false AND m.trangThai = 'DANG_CHIEU' " +
+            "ORDER BY SIZE(m.danhGia) DESC, m.ngayTao DESC")
+    List<Movie> findTrendingMovies();
+
+    // Tìm phim sắp chiếu (chưa bị xóa)
+    @Query("SELECT m FROM Movie m WHERE m.daXoa = false AND m.trangThai = 'SAP_CHIEU' " +
+            "ORDER BY m.ngayPhatHanh ASC")
+    List<Movie> findUpcomingMovies();
+
+    // Tìm phim tương tự (chưa bị xóa, cùng thể loại)
+    @Query("SELECT DISTINCT m FROM Movie m JOIN m.theLoaiList tl " +
+            "WHERE m.daXoa = false AND m.idPhim != :id AND " +
+            "tl IN (SELECT tl2 FROM Movie m2 JOIN m2.theLoaiList tl2 WHERE m2.idPhim = :id)")
+    List<Movie> findSimilarMovies(@Param("id") Integer id);
 }

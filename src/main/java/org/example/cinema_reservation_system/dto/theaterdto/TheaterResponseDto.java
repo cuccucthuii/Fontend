@@ -13,4 +13,10 @@ public class TheaterResponseDto {
     private String diaChi;
     private TrangThaiRapChieu trangThaiRapChieu;
     private String soDienThoai;
+    private String thanhPho;
+    private String khuVuc;
+    private Double latitude;
+    private Double longitude;
+    // Khoảng cách (km) – chỉ set khi gọi /nearby
+    private Double distanceKm;
 }

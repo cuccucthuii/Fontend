@@ -7,6 +7,8 @@ import lombok.Data;
 public class LoginDto {
     @NotBlank
     private String tenDangNhap;
+    
+    private String email;
 
     @NotBlank
     private String matKhau;

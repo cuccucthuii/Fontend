@@ -12,9 +12,17 @@ public class EmployeeRegisterDto {
     @NotBlank(message = "Mật khẩu không được để trống")
     private String matKhau;
 
-    @NotNull(message = "Id vai trò không được để trống")
-    private Integer idVaiTro;
+    @NotBlank(message = "Email không được để trống")
+    private String email;
 
-    @NotNull(message = "Id nhân viên không được để trống")
-    private Integer idNhanVien;
+    @NotBlank(message = "Tên nhân viên không được để trống")
+    private String tenNhanVien;
+
+    private String soDienThoai;
+    private String ngaySinh;
+    private String gioiTinh;
+    private String cccd;
+    private String ngayVaoLam;
+    private Integer idRapChieu;
+    private String chucVu;
 }

@@ -9,7 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.hibernate.validator.constraints.ScriptAssert;
 
 import java.math.BigDecimal;
@@ -42,9 +42,9 @@ public class ShowTime {
     @Column(name = "ngay_chieu", nullable = false)
     private LocalDate ngayChieu;
 
-    @NotNull(message = "gioChieu cannot be null")
-    @Column(name = "gio_chieu", nullable = false)
-    private LocalTime gioChieu;
+//    @NotNull(message = "gioChieu cannot be null")
+//    @Column(name = "gio_chieu", nullable = false)
+//    private LocalTime gioChieu;
 
     @NotNull(message = "thoiGianBatDau cannot be null")
     @Column(name = "thoi_gian_bat_dau", nullable = false)
@@ -57,7 +57,7 @@ public class ShowTime {
     @NotNull(message = "trangThai cannot be null")
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiSuatChieu trangThai = TrangThaiSuatChieu.HOAN_THANH;
+    private TrangThai trangThai = TrangThai.KET_THUC;
 
     @NotNull(message = "phim cannot be null")
     @ManyToOne
@@ -69,8 +69,8 @@ public class ShowTime {
     @JoinColumn(name = "id_phong_chieu", nullable = false)
     private Room phongChieu;
 
-    @Column(name = "gia_ve", nullable = false, precision = 10, scale = 2)
-    private BigDecimal giaVe = new BigDecimal("50000.00");
+//    @Column(name = "gia_ve", nullable = false, precision = 10, scale = 2)
+//    private BigDecimal giaVe = new BigDecimal("50000.00");
 
     @Column(name = "so_ghe_con_trong", nullable = false)
     private Integer soGheConTrong = 0;

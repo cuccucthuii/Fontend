@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiVePhim;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 @AllArgsConstructor
@@ -12,10 +13,8 @@ import java.time.LocalTime;
 @Data
 public class CinemaTicketResponseDto {
     private int idVePhim;
-    private double giaVe;
     private LocalDate ngayDat;
     private TrangThaiVePhim trangThai;
-
     private String tenPhim;
     private String tenNhanVien;
     private LocalDate ngayChieu;
@@ -24,7 +23,10 @@ public class CinemaTicketResponseDto {
     private String tenSuatChieu;
     private String tenKhachHang;
     private String soDienThoaiKhachHang;
-
     private String tenPhongChieu;
     private String tenRapChieu;
+
+    //thêm
+    private Boolean daXoa;
+    private BigDecimal giaVe;
 }

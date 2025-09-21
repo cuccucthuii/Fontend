@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiRapChieu;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -29,13 +29,19 @@ public class Theater {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiRapChieu trangThai = TrangThaiRapChieu.HOAT_DONG;
+    private TrangThai trangThai = TrangThai.HOAT_DONG;
 
     @Column(name = "so_dien_thoai", nullable = false, length = 10)
     private String soDienThoai;
 
     @Column(name = "mo_ta", columnDefinition = "TEXT")
     private String moTa;
+
+    @Column(name = "thanh_pho", length = 100)
+    private String thanhPho;
+
+    @Column(name = "khu_vuc", length = 100)
+    private String khuVuc;
 
     @CreationTimestamp
     @Column(name = "ngay_tao")
@@ -50,4 +56,11 @@ public class Theater {
 
     @Column(name = "tong_so_ghe")
     private Integer tongSoGhe = 0;
+
+    // Tọa độ địa lý
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 }

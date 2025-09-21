@@ -3,7 +3,7 @@ package org.example.cinema_reservation_system.dto.invoicedto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiHoaDon;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 import java.time.LocalDate;
 
@@ -17,7 +17,7 @@ public class InvoiceDto {
     private Double tienGiam;
     private LocalDate ngayDat;
     private String loaiHoaDon;
-    private TrangThaiHoaDon trangThai;
+    private TrangThai trangThai;
 
     // Thông tin từ bảng KhachHang (liên kết ManyToOne)
     private String tenKhachHang;

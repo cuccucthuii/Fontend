@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiVoucher;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -40,7 +40,7 @@ public class Voucher {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiVoucher trangThai = TrangThaiVoucher.HOAT_DONG;
+    private TrangThai trangThai = TrangThai.HOAT_DONG;
 
     @Column(name = "so_luong", nullable = false)
     private Integer soLuong;

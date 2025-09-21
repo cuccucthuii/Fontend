@@ -34,6 +34,10 @@ public class MovieMapper {
         dto.setDinhDang(phim.getDinhDang());
         dto.setTrangThai(phim.getTrangThai());
         dto.setNgayTao(phim.getNgayTao() != null ? phim.getNgayTao() : null);
+        dto.setTuoiGioiHan(phim.getTuoiGioiHan());
+        dto.setNamSanXuat(phim.getNamSanXuat());
+        dto.setDoPhoBien(phim.getDoPhoBien());
+        dto.setGiaVeCoBan(phim.getGiaVeCoBan());
         dto.setPosterUrl(getImageUrl(phim, LoaiHinhAnh.POSTER));
         dto.setBannerUrl(getImageUrl(phim, LoaiHinhAnh.BANNER));
         dto.setTrailerUrl(phim.getTrailer() != null ? phim.getTrailer().getUrl() : null);
@@ -53,7 +57,35 @@ public class MovieMapper {
                 .filter(img -> loai.equals(img.getLoai()))
                 .findFirst()
                 .map(Image::getUrl)
+                .map(this::normalizeImageUrl)
                 .orElse(null);
+    }
+
+    private String normalizeImageUrl(String rawUrl) {
+        if (rawUrl == null || rawUrl.isBlank()) return null;
+
+        String url = rawUrl.trim();
+        // Map legacy /images/* to /uploads/*
+        if (url.startsWith("/images/")) {
+            url = url.replaceFirst("^/images/", "/uploads/");
+        }
+        // If URL ends with '/', it's a directory, FE cannot load → return null to let FE fallback
+        if (url.endsWith("/")) {
+            return null;
+        }
+        // Build absolute URL if not already absolute
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+            return url;
+        }
+        try {
+            return org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                    .fromCurrentContextPath()
+                    .path(url.startsWith("/") ? url : "/" + url)
+                    .toUriString();
+        } catch (Exception ignored) {
+            // Fallback to relative if no request context
+            return url;
+        }
     }
 
 }

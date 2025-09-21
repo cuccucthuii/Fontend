@@ -1,79 +1,97 @@
 package org.example.cinema_reservation_system.entity;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import jakarta.persistence.*;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiHoaDon;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Entity
 @Table(name = "hoa_don")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Invoice {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_hoa_don")
     private Integer idHoaDon;
-
-    @Column(name = "ten_hoa_don", nullable = false, length = 100)
-    private String tenHoaDon;
-
-    @Column(name = "tong_tien", nullable = false)
-    private BigDecimal tongTien;
-
-    @Column(name = "tien_giam")
-    private BigDecimal tienGiam;
-
-    @Column(name = "ngay_dat", nullable = false)
-    private LocalDate ngayDat;
-
-    @Column(name = "loai_hoa_don", nullable = false, length = 50)
-    private String loaiHoaDon;
-
-    @Column(name = "so_dien_thoai", nullable = false, length = 15)
-    private String soDienThoai;
-
-    @Column(name = "ten_khach_hang", nullable = false, length = 100)
-    private String tenKhachHang;
-
-    @Column(name = "ma_giao_dich_vnpay", length = 100)
-    private String maGiaoDichVNPay;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "trang_thai", nullable = false)
-    private TrangThaiHoaDon trangThai = TrangThaiHoaDon.DA_THANH_TOAN;
-
-    @ManyToOne
-    @JoinColumn(name = "id_khach_hang")
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_khach_hang", nullable = true)
     private Customer khachHang;
-
-    @ManyToOne
+    
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_nhan_vien")
     private Staff nhanVien;
-
-    @ManyToOne
+    
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_voucher")
     private Voucher voucher;
-
+    
+    @Column(name = "ten_hoa_don")
+    private String tenHoaDon;
+    
+    @Column(name = "tong_tien")
+    private Double tongTien;
+    
+    @Column(name = "tien_giam")
+    private Double tienGiam;
+    
+    @Column(name = "ngay_dat")
+    private LocalDate ngayDat;
+    
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
-
-    @Column(name = "ngay_cap_nhat")
-    private LocalDateTime ngayCapNhat;
-
-    @Column(name = "ghi_chu", columnDefinition = "TEXT")
-    private String ghiChu;
-
-    @Column(name = "phuong_thuc_thanh_toan", length = 50)
+    
+    @Column(name = "loai_hoa_don")
+    private String loaiHoaDon;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai")
+    private TrangThaiHoaDon trangThai;
+    
+    @Column(name = "ma_dat_ve")
+    private String maDatVe;
+    
+    @Column(name = "ma_giao_dich")
+    private String maGiaoDich;
+    
+    // ma_giao_dich_vnpay đã loại bỏ trong DB, dùng ma_giao_dich chung
+    
+    @Column(name = "ten_khach_hang")
+    private String tenKhachHang;
+    
+    @Column(name = "so_dien_thoai")
+    private String soDienThoai;
+    
+    @Column(name = "trang_thai_email")
+    private String trangThaiEmail;
+    
+    @Column(name = "ngay_gui_email")
+    private LocalDateTime ngayGuiEmail;
+    
+    @Column(name = "phuong_thuc_thanh_toan")
     private String phuongThucThanhToan;
 
-    @Column(name = "trang_thai_thanh_toan", length = 20)
-    private String trangThaiThanhToan = "CHO_THANH_TOAN";
+    // Trạng thái thanh toán của hóa đơn (CHO_THANH_TOAN/HOAN_THANH/DA_HUY)
+    @Column(name = "trang_thai_thanh_toan")
+    private String trangThaiThanhToan;
+    
+    @Column(name = "ghi_chu")
+    private String ghiChu;
+    
+    // Business methods
+    public boolean coTheHuy() {
+        return TrangThaiHoaDon.CHO_THANH_TOAN.equals(this.trangThai);
+    }
+    
+    public boolean daThanhToan() {
+        return TrangThaiHoaDon.DA_THANH_TOAN.equals(this.trangThai);
+    }
 }

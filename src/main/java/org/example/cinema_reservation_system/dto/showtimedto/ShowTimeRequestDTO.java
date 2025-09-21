@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu;
 import org.hibernate.validator.constraints.ScriptAssert;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
@@ -48,4 +49,10 @@ public class ShowTimeRequestDTO {
 
     @NotNull(message = "idPhongChieu cannot be null")
     private Integer idPhongChieu;
+    
+    // Giá vé
+    private BigDecimal giaVe;
+    
+    // Ghi chú
+    private String ghiChu;
 }

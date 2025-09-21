@@ -37,6 +37,6 @@ public class Payment {
     @NotNull(message = "Trạng thái ghế không được null")
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai", nullable = false)
-    private TrangThaiThanhToan trangThai = TrangThaiThanhToan.CHO_XU_LY;
+    private TrangThaiThanhToan trangThai = TrangThaiThanhToan.CHO_THANH_TOAN;
 
 }

@@ -3,7 +3,7 @@ package org.example.cinema_reservation_system.dto.moviedto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiPhim;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,11 +22,17 @@ public class MovieResponseDto {
 
     private LocalDate ngayPhatHanh;
 
-    private TrangThaiPhim trangThai;
+    private TrangThai trangThai;
 
     private String dinhDang;
 
     private LocalDate ngayTao;
+
+    // Bổ sung các trường đang thiếu so với DB
+    private String tuoiGioiHan;   // P, T13, T16, T18
+    private Integer namSanXuat;   // ví dụ 2025
+    private String doPhoBien;     // PHO_BIEN, IT_PHO_BIEN, DAC_BIET
+    private java.math.BigDecimal giaVeCoBan; // giá vé cơ bản
 
     private String posterUrl;
 

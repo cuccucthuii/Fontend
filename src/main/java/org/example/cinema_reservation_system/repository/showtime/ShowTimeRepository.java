@@ -1,7 +1,7 @@
 package org.example.cinema_reservation_system.repository.showtime;
 
 import org.example.cinema_reservation_system.entity.ShowTime;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 public interface ShowTimeRepository extends JpaRepository<ShowTime, Integer> {
 
@@ -26,13 +27,13 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Integer> {
     List<ShowTime> findByNgayChieuBetween(LocalDate start, LocalDate end);
     List<ShowTime> findByNgayChieuBefore(LocalDate date);
 
-    List<ShowTime> findByTrangThai(TrangThaiSuatChieu trangThai);
-    Page<ShowTime> findByTrangThai(TrangThaiSuatChieu trangThai, Pageable pageable);
+    List<ShowTime> findByTrangThai(TrangThai trangThai);
+    Page<ShowTime> findByTrangThai(TrangThai trangThai, Pageable pageable);
 
     long countByPhim_IdPhim(Integer idPhim);
     long countByPhongChieu_IdPhongChieu(Integer id);
     long countByNgayChieu(LocalDate ngay);
-    long countByTrangThai(TrangThaiSuatChieu trangThai);
+    long countByTrangThai(TrangThai trangThai);
 
     @Query("""
         SELECT s FROM ShowTime s
@@ -47,14 +48,14 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Integer> {
 
     @Query("""
         SELECT s FROM ShowTime s
-        WHERE s.ngayChieu >= :today AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu.DA_LEN_LICH
+        WHERE s.ngayChieu >= :today AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThai.DANG_CHIEU
     """)
     List<ShowTime> findAvailableShowtimes(@Param("today") LocalDate today);
 
     @Query("""
         SELECT s FROM ShowTime s
         WHERE s.phim.idPhim = :phimId AND s.ngayChieu = :ngayChieu
-          AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu.DA_LEN_LICH
+          AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThai.DANG_CHIEU
     """)
     List<ShowTime> findAvailableByPhimAndDate(@Param("phimId") Integer phimId,
                                               @Param("ngayChieu") LocalDate ngayChieu);
@@ -69,7 +70,16 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Integer> {
 
     @Query("""
         SELECT s FROM ShowTime s
-        WHERE s.phim.idPhim = :phimId AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu.DA_LEN_LICH
+        WHERE s.phim.idPhim = :phimId AND s.ngayChieu BETWEEN :start AND :end
+    """)
+    List<ShowTime> findByPhimAndNgayChieuBetween(@Param("phimId") Integer phimId,
+                                                 @Param("start") LocalDate start,
+                                                 @Param("end") LocalDate end,
+                                                 Pageable pageable);
+
+    @Query("""
+        SELECT s FROM ShowTime s
+        WHERE s.phim.idPhim = :phimId AND s.trangThai = org.example.cinema_reservation_system.utils.enums.TrangThai.DANG_CHIEU
     """)
     List<ShowTime> findActiveShowtimesByPhimId(@Param("phimId") Integer phimId);
 
@@ -83,6 +93,84 @@ public interface ShowTimeRepository extends JpaRepository<ShowTime, Integer> {
     Page<ShowTime> searchShowtimes(@Param("keyword") String keyword,
                                    @Param("fromDate") LocalDate fromDate,
                                    @Param("toDate") LocalDate toDate,
-                                   @Param("trangThai") TrangThaiSuatChieu trangThai,
+                                   @Param("trangThai") TrangThai trangThai,
                                    Pageable pageable);
+
+    // Showtimes by movie and theater (rạp)
+    @Query("""
+        SELECT s FROM ShowTime s
+        WHERE s.phim.idPhim = :phimId
+          AND s.phongChieu.rapChieu.idRapChieu = :rapId
+    """)
+    List<ShowTime> findByPhimIdAndRapId(@Param("phimId") Integer phimId,
+                                        @Param("rapId") Integer rapId);
+
+    @Query("""
+        SELECT s.phim.idPhim AS phimId, COUNT(s) AS soSuatChieu
+        FROM ShowTime s
+        GROUP BY s.phim.idPhim
+    """)
+    List<Object[]> countShowtimesPerMovie();
+
+    @Query("""
+        SELECT s.phim.idPhim
+        FROM ShowTime s
+        GROUP BY s.phim.idPhim
+        HAVING COUNT(s) > 1
+    """)
+    List<Integer> findMovieIdsWithMultipleShowtimes();
+
+
+    @Query(value = """
+WITH showtime_data AS (
+    SELECT
+        p.id_phim AS movie_id,
+        p.ten_phim,
+        ha.url AS poster_url,
+        r.id_rap_chieu AS cinema_id,
+        r.ten_rap_chieu AS cinema_name,
+        sc.id_suat_chieu,
+        sc.ngay_chieu,
+        TO_CHAR(sc.thoi_gian_bat_dau, 'HH24:MI') AS start_time,
+        TO_CHAR(sc.thoi_gian_ket_thuc, 'HH24:MI') AS end_time,
+        COALESCE(sc.tong_so_ghe, 50) AS totalSeats,
+        COALESCE(sc.so_ghe_con_trong, 50) AS availableSeats,
+        CASE WHEN COALESCE(sc.so_ghe_con_trong, 50) = 0
+             THEN TRUE ELSE FALSE END AS soldOut,
+        p.dinh_dang || ' PHỤ ĐỀ' AS format
+    FROM suat_chieu sc
+    JOIN phim p ON sc.id_phim = p.id_phim
+    JOIN phong_chieu pc ON sc.id_phong_chieu = pc.id_phong_chieu
+    JOIN rap_chieu r ON pc.id_rap_chieu = r.id_rap_chieu
+    LEFT JOIN hinh_anh ha 
+        ON ha.id_phim = p.id_phim
+       AND LOWER(ha.loai_hinh_anh) = 'poster'
+    WHERE p.id_phim = :movieId
+      AND r.id_rap_chieu = :cinemaId
+)
+SELECT
+    COALESCE(JSON_AGG(DISTINCT JSON_BUILD_OBJECT(
+        'value', ngay_chieu,
+        'day', EXTRACT(DAY FROM ngay_chieu),
+        'month', TO_CHAR(ngay_chieu, '/MM'),
+        'weekday', TO_CHAR(ngay_chieu, 'DY')
+    )::jsonb)::text, '[]') AS available_dates,
+    COALESCE(JSON_AGG(showtime_data)::text, '[]') AS showtimes
+FROM showtime_data
+""", nativeQuery = true)
+    Map<String, Object> getShowtimeData(@Param("movieId") Long movieId,
+                                        @Param("cinemaId") Long cinemaId);
+
+    // Test query đơn giản để debug
+    @Query(value = """
+    SELECT COUNT(*) as count
+    FROM suat_chieu sc
+    JOIN phim p ON sc.id_phim = p.id_phim
+    JOIN phong_chieu pc ON sc.id_phong_chieu = pc.id_phong_chieu
+    JOIN rap_chieu r ON pc.id_rap_chieu = r.id_rap_chieu
+    WHERE p.id_phim = :movieId
+      AND r.id_rap_chieu = :cinemaId
+    """, nativeQuery = true)
+    Long countShowtimesByMovieAndCinema(@Param("movieId") Long movieId,
+                                       @Param("cinemaId") Long cinemaId);
 }

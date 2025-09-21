@@ -8,9 +8,14 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 public interface ShowTimeService {
     ShowTimeResponseDTO create(ShowTimeRequestDTO requestDTO);
+
+    // Tạo nhiều suất chiếu cùng lúc và tự động set số ghế theo layout
+    List<ShowTimeResponseDTO> createBulk(List<ShowTimeRequestDTO> requests);
+
     ShowTimeResponseDTO update(Integer id, ShowTimeRequestDTO requestDTO);
     void delete(Integer id);
     ShowTimeResponseDTO findById(Integer id);
@@ -41,6 +46,8 @@ public interface ShowTimeService {
     boolean isTimeSlotAvailable(Integer phongChieuId, LocalDate ngayChieu, LocalTime thoiGianBatDau, LocalTime thoiGianKetThuc);
     boolean isTimeSlotAvailableForUpdate(Integer suatChieuId, Integer phongChieuId, LocalDate ngayChieu, LocalTime thoiGianBatDau, LocalTime thoiGianKetThuc);
 
+    List<ShowTimeSummaryDTO> findByPhimAndRap(Integer phimId, Integer rapId);
+
     boolean canDeleteShowtime(Integer id);
     boolean canUpdateShowtime(Integer id);
 
@@ -57,4 +64,17 @@ public interface ShowTimeService {
     void expireOldShowtimes();
 
     Page<ShowTimeSummaryDTO> searchShowtimes(String keyword, LocalDate fromDate, LocalDate toDate, TrangThaiSuatChieu trangThai, Pageable pageable);
+
+    ShowTimeResDTO getShowtimes(Long movieId, Long cinemaId);
+
+    long countMovies();
+
+    long countShowtimes();
+
+    long countCinemas();
+
+    int createSampleShowtimes();
+
+    Map<String, Object> testGetShowtimeData(Long movieId, Long cinemaId);
+    Long countShowtimesByMovieAndCinema(Long movieId, Long cinemaId);
 }

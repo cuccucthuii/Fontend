@@ -4,13 +4,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiKhachHang;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -40,7 +42,7 @@ public class Customer {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "trang_thai")
-    private TrangThaiKhachHang trangThai = TrangThaiKhachHang.HOAT_DONG;
+    private TrangThai trangThai = TrangThai.HOAT_DONG;
 
     @Column(name = "diem_tich_luy")
     private Integer diemTichLuy = 0;
@@ -58,8 +60,9 @@ public class Customer {
     @Column(name = "ghi_chu", columnDefinition = "TEXT")
     private String ghiChu;
 
-    @Column(name = "anh_dai_dien", length = 255)
-    private String anhDaiDien;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_avatar")
+    private Avatar avatar;
 
     @Column(name = "dia_chi", columnDefinition = "TEXT")
     private String diaChi;
@@ -73,4 +76,14 @@ public class Customer {
 
     @Column(name = "tong_tien_da_mua", precision = 15, scale = 2)
     private BigDecimal tongTienDaMua = BigDecimal.ZERO;
+
+    // Quan hệ với đánh giá phim
+    @OneToMany(mappedBy = "khachHang", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MovieReview> danhGiaPhim = new ArrayList<>();
+
+
+
+    // Thông tin bổ sung
+    @Column(name = "so_danh_gia")
+    private Integer soDanhGia = 0; // Số lượng đánh giá đã viết
 }

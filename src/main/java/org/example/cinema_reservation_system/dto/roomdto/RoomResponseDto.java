@@ -7,6 +7,7 @@ import org.example.cinema_reservation_system.utils.enums.TrangThaiPhongChieu;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiRapChieu;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -23,4 +24,9 @@ public class RoomResponseDto {//trả dữ liệu về FE
     private String diaChi;
     private String soDienThoai;
     private TrangThaiRapChieu trangThaiRapChieu;
+
+    //thêm ới
+    private Boolean daXoa;
+    private LocalDateTime ngayXoa;
+    private String nguoiXoa;
 }

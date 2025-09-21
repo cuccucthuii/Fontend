@@ -2,6 +2,7 @@ package org.example.cinema_reservation_system.repository.cinematicket;
 
 import java.math.BigDecimal;
 
+
 public interface CinemaTicketRepositoryCustom {
     void insertVePhimNative(
             Integer idGheNgoi,

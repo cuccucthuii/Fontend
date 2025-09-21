@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.cinema_reservation_system.dto.roomdto.RoomRequestDto;
 import org.example.cinema_reservation_system.dto.roomdto.RoomResponseDto;
 import org.example.cinema_reservation_system.entity.Room;
-import org.example.cinema_reservation_system.service.RoomService;
+import org.example.cinema_reservation_system.service.room.RoomService;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiPhongChieu;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -86,53 +86,56 @@ public class RoomController {
         return ResponseEntity.ok(result);
     }
 
-    // Soft Delete - Chuyển vào thùng rác
-    /*
+    //thêm mơ
+    // XÓA MỀM (Soft Delete) - Chuyển phòng vào thùng rác
     @PutMapping("/{id}/soft-delete")
-    public ResponseEntity<String> softDeletePhongChieu(@PathVariable Integer id) {
-        boolean success = phongChieuService.softDeletePhongChieu(id);
-        if (success) {
-            return ResponseEntity.ok("Đã chuyển phòng chiếu vào thùng rác");
+    public ResponseEntity<String> softDelete(@PathVariable Integer id) {
+        try {
+            phongChieuService.softDelete(id);
+            return ResponseEntity.ok("Đã chuyển phòng chiếu vào thùng rác thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể xóa phòng chiếu: " + e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 
-    // Restore - Khôi phục từ thùng rác
+    // KHÔI PHỤC (Restore) - Khôi phục phòng từ thùng rác
     @PutMapping("/{id}/restore")
-    public ResponseEntity<String> restorePhongChieu(@PathVariable Integer id) {
-        boolean success = phongChieuService.restorePhongChieu(id);
-        if (success) {
-            return ResponseEntity.ok("Đã khôi phục phòng chiếu");
+    public ResponseEntity<String> restore(@PathVariable Integer id) {
+        try {
+            phongChieuService.restore(id);
+            return ResponseEntity.ok("Đã khôi phục phòng chiếu thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể khôi phục phòng chiếu: " + e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 
-    // Lấy danh sách phòng chiếu trong thùng rác
-    @GetMapping("/trash")
-    public ResponseEntity<List<Room>> getTrashPhongChieu() {
-        List<Room> trashList = phongChieuService.getTrashPhongChieu();
-        return ResponseEntity.ok(trashList);
-    }
-
-    // Permanent Delete - Xóa vĩnh viễn
+    // XÓA VĨNH VIỄN (Permanent Delete) - Xóa hoàn toàn khỏi database
     @DeleteMapping("/{id}/permanent")
-    public ResponseEntity<String> permanentlyDeletePhongChieu(@PathVariable Integer id) {
-        boolean success = phongChieuService.permanentlyDeletePhongChieu(id);
-        if (success) {
-            return ResponseEntity.ok("Đã xóa vĩnh viễn phòng chiếu");
+    public ResponseEntity<String> permanentDelete(@PathVariable Integer id) {
+        try {
+            phongChieuService.permanentDelete(id);
+            return ResponseEntity.ok("Đã xóa vĩnh viễn phòng chiếu thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể xóa vĩnh viễn phòng chiếu: " + e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 
-    // Hard Delete - Xóa vĩnh viễn (giữ lại cho tương thích)
+    // LẤY DANH SÁCH THÙNG RÁC - Chỉ phòng đã bị xóa mềm
+    @GetMapping("/trash")
+    public ResponseEntity<List<RoomResponseDto>> getTrash() {
+        List<RoomResponseDto> list = phongChieuService.findAllDeletedDto();
+        return ResponseEntity.ok(list);
+    }
+
+    // XÓA CŨ (Hard Delete) - Giữ lại để tương thích ngược
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deletePhongChieu(@PathVariable Integer id) {
-        boolean success = phongChieuService.deletePhongChieu(id);
-        if (success) {
-            return ResponseEntity.ok("Đã xóa phòng chiếu");
+    public ResponseEntity<String> delete(@PathVariable Integer id) {
+        try {
+            phongChieuService.softDelete(id); // Chuyển sang soft delete
+            return ResponseEntity.ok("Đã chuyển phòng chiếu vào thùng rác thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể xóa phòng chiếu: " + e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 
-     */
 }

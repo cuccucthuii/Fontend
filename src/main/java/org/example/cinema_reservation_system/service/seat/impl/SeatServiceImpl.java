@@ -12,7 +12,7 @@ import org.example.cinema_reservation_system.mapper.seat.SeatModelMapper;
 import org.example.cinema_reservation_system.repository.seat.SeatRepository;
 import org.example.cinema_reservation_system.repository.room.RoomRepository;
 import org.example.cinema_reservation_system.service.seat.SeatService;
-import org.example.cinema_reservation_system.utils.enums.TrangThaiGheNgoi;
+import org.example.cinema_reservation_system.utils.enums.TrangThai;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,7 +46,7 @@ public class SeatServiceImpl implements SeatService {
         }
         Seat entity = gheNgoiMapper.toEntity(dto);
         entity.setPhongChieu(phong);
-        entity.setTrangThai(TrangThaiGheNgoi.CON_TRONG);
+        entity.setTrangThai(TrangThai.CON_TRONG);
         Seat saved = gheNgoiRepository.save(entity);
         return gheNgoiMapper.toDTO(saved);
     }
@@ -92,7 +92,7 @@ public class SeatServiceImpl implements SeatService {
     public void delete(Integer id) {
         Seat e = gheNgoiRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Ghế không tồn tại"));
-        if (e.getTrangThai() == TrangThaiGheNgoi.DA_DAT) {
+        if (e.getTrangThai() == TrangThai.DA_DAT) {
             throw new BusinessException("Không thể xóa ghế đã đặt");
         }
         gheNgoiRepository.delete(e);
@@ -133,7 +133,7 @@ public class SeatServiceImpl implements SeatService {
                 .orElseThrow(() -> new BusinessException("Phòng chiếu không tồn tại"));
         return gheNgoiRepository
                 .findByPhongChieuIdPhongChieuAndTrangThaiOrderByHangGheAscSoGheAsc(
-                        roomId, TrangThaiGheNgoi.CON_TRONG)
+                        roomId, TrangThai.CON_TRONG)
                 .stream()
                 .map(gheNgoiMapper::toDTO)
                 .collect(Collectors.toList());
@@ -149,7 +149,7 @@ public class SeatServiceImpl implements SeatService {
             throw new BusinessException("Một số ghế không tồn tại");
         }
         List<Seat> unavailable = seats.stream()
-                .filter(g -> g.getTrangThai() != TrangThaiGheNgoi.CON_TRONG)
+                .filter(g -> g.getTrangThai() != TrangThai.CON_TRONG)
                 .collect(Collectors.toList());
         if (!unavailable.isEmpty()) {
             String pos = unavailable.stream()
@@ -157,7 +157,7 @@ public class SeatServiceImpl implements SeatService {
                     .collect(Collectors.joining(", "));
             throw new BusinessException("Ghế không khả dụng: " + pos);
         }
-        seats.forEach(g -> g.setTrangThai(TrangThaiGheNgoi.DANG_SU_DUNG));
+        seats.forEach(g -> g.setTrangThai(TrangThai.DANG_SU_DUNG));
         List<Seat> booked = gheNgoiRepository.saveAll(seats);
         return booked.stream()
                 .map(gheNgoiMapper::toDTO)
@@ -168,12 +168,12 @@ public class SeatServiceImpl implements SeatService {
     public void xacNhanDatGhe(List<Integer> ids) {
         List<Seat> seats = gheNgoiRepository.findAllById(ids);
         List<Seat> choosing = seats.stream()
-                .filter(g -> g.getTrangThai() == TrangThaiGheNgoi.DANG_SU_DUNG)
+                .filter(g -> g.getTrangThai() == TrangThai.DANG_SU_DUNG)
                 .collect(Collectors.toList());
         if (choosing.isEmpty()) {
             throw new BusinessException("Không có ghế để xác nhận");
         }
-        choosing.forEach(g -> g.setTrangThai(TrangThaiGheNgoi.DA_DAT));
+        choosing.forEach(g -> g.setTrangThai(TrangThai.DA_DAT));
         gheNgoiRepository.saveAll(choosing);
     }
 
@@ -181,9 +181,9 @@ public class SeatServiceImpl implements SeatService {
     public void huyDatGhe(List<Integer> ids) {
         List<Seat> seats = gheNgoiRepository.findAllById(ids);
         seats.forEach(g -> {
-            if (g.getTrangThai() == TrangThaiGheNgoi.DANG_SU_DUNG ||
-                    g.getTrangThai() == TrangThaiGheNgoi.DA_DAT) {
-                g.setTrangThai(TrangThaiGheNgoi.CON_TRONG);
+            if (g.getTrangThai() == TrangThai.DANG_SU_DUNG ||
+                    g.getTrangThai() == TrangThai.DA_DAT) {
+                g.setTrangThai(TrangThai.CON_TRONG);
             }
         });
         gheNgoiRepository.saveAll(seats);
@@ -220,7 +220,7 @@ public class SeatServiceImpl implements SeatService {
                     g.setHangGhe(hang);
                     g.setSoGhe(so);
                     g.setLoaiGhe(loaiGhe);
-                    g.setTrangThai(TrangThaiGheNgoi.CON_TRONG);
+                    g.setTrangThai(TrangThai.CON_TRONG);
                     g.setGiaGhe(giaGhe);
                     toCreate.add(g);
                 }
@@ -240,7 +240,7 @@ public class SeatServiceImpl implements SeatService {
         phongChieuRepository.findById(roomId)
                 .orElseThrow(() -> new BusinessException("Phòng chiếu không tồn tại"));
         long booked = gheNgoiRepository.countByPhongChieuIdPhongChieuAndTrangThai(
-                roomId, TrangThaiGheNgoi.DA_DAT);
+                roomId, TrangThai.DA_DAT);
         if (booked > 0) {
             throw new BusinessException("Không thể xóa khi có ghế đã đặt");
         }
@@ -256,13 +256,13 @@ public class SeatServiceImpl implements SeatService {
         Map<String, Long> stats = new LinkedHashMap<>();
         stats.put("tongSoGhe", (long) all.size());
         stats.put("soGheTrong", all.stream()
-                .filter(g -> g.getTrangThai() == TrangThaiGheNgoi.CON_TRONG)
+                .filter(g -> g.getTrangThai() == TrangThai.CON_TRONG)
                 .count());
         stats.put("soGheDangChon", all.stream()
-                .filter(g -> g.getTrangThai() == TrangThaiGheNgoi.DANG_SU_DUNG)
+                .filter(g -> g.getTrangThai() == TrangThai.DANG_SU_DUNG)
                 .count());
         stats.put("soGheDaDat", all.stream()
-                .filter(g -> g.getTrangThai() == TrangThaiGheNgoi.DA_DAT)
+                .filter(g -> g.getTrangThai() == TrangThai.DA_DAT)
                 .count());
         return stats;
     }
@@ -271,7 +271,7 @@ public class SeatServiceImpl implements SeatService {
     @Transactional(readOnly = true)
     public boolean isGheAvailable(Integer idGheNgoi) {
         return gheNgoiRepository.findById(idGheNgoi)
-                .map(g -> g.getTrangThai() == TrangThaiGheNgoi.CON_TRONG)
+                .map(g -> g.getTrangThai() == TrangThai.CON_TRONG)
                 .orElse(false);
     }
 }

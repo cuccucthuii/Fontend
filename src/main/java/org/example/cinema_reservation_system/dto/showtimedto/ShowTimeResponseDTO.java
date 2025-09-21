@@ -5,7 +5,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.cinema_reservation_system.utils.enums.TrangThaiSuatChieu;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 // DTO cho response với thông tin đầy đủ
@@ -31,4 +33,18 @@ public class ShowTimeResponseDTO {
     private Integer idPhongChieu;
     private String tenPhongChieu;
     private Integer soGhe;
+    
+    // Thông tin ghế
+    private Integer soGheConTrong;
+    private Integer tongSoGhe;
+    
+    // Thông tin thời gian
+    private LocalDateTime ngayTao;
+    private LocalDateTime ngayCapNhat;
+    
+    // Ghi chú
+    private String ghiChu;
+    
+    // Giá vé
+    private BigDecimal giaVe;
 }

@@ -47,7 +47,7 @@ public class Employee {
         private LocalDate ngayVaoLam;
 
         @Column(name = "chuc_vu", nullable = false, length = 50)
-        private String chucVu; // "QuanLy", "ThuNgan", "BanVe", "KyThuat", "VeSinh"
+        private String chucVu; // "QuanLy", "ThuNgan", "BanVe"
 
         @Column(name = "luong_co_ban", precision = 15, scale = 2)
         private BigDecimal luongCoBan;

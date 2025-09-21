@@ -17,9 +17,13 @@ public class ShowTimeSummaryDTO {
     private Integer idSuatChieu;
     private String tenSuatChieu;
     private LocalDate ngayChieu;
-    private LocalTime gioChieu;
     private TrangThaiSuatChieu trangThai;
     private String tenPhim;
     private String tenPhongChieu;
+    private String tenRapChieu;
+    private Integer soGheConTrong;
+    private Integer tongSoGhe;
+    private LocalTime thoiGianBatDau;
+    private LocalTime thoiGianKetThuc;
 }
 

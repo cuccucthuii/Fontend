@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
@@ -111,5 +113,37 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
     """, nativeQuery = true)
     List<Object[]> doanhThuTheoNam();
 
+    // ========== TRA CỨU ĐƠN HÀNG ==========
+    
+    // Tìm hóa đơn theo mã giao dịch
+    Optional<Invoice> findByMaGiaoDich(String maGiaoDich);
+    
+    // Tìm hóa đơn theo mã đặt vé
+    Optional<Invoice> findByMaDatVe(String maDatVe);
+    
+    // Tìm hóa đơn theo mã giao dịch hoặc mã đặt vé
+    @Query("SELECT h FROM Invoice h WHERE h.maGiaoDich = :ma OR h.maDatVe = :ma")
+    Optional<Invoice> findByMaGiaoDichOrMaDatVe(@Param("ma") String ma);
+    
+    // Tìm hóa đơn theo khách hàng và mã
+    @Query("SELECT h FROM Invoice h WHERE h.khachHang.idKhachHang = :customerId AND (h.maGiaoDich = :ma OR h.maDatVe = :ma)")
+    Optional<Invoice> findByCustomerAndMa(@Param("customerId") Integer customerId, @Param("ma") String ma);
+    
+    // Tìm hóa đơn theo mã giao dịch VNPay - đã hợp nhất sang ma_giao_dich chung
+    // Optional<Invoice> findByMaGiaoDichVNPay(String maGiaoDichVNPay);
+    
+    // ========== STATISTICS METHODS ==========
+    
+    // Đếm số hóa đơn theo khách hàng
+    @Query("SELECT COUNT(h) FROM Invoice h WHERE h.khachHang.idKhachHang = :userId")
+    long countByUserId(@Param("userId") Integer userId);
+    
+    // Tính tổng số tiền theo khách hàng
+    @Query("SELECT COALESCE(SUM(h.tongTien), 0) FROM Invoice h WHERE h.khachHang.idKhachHang = :userId AND h.trangThai = 'DA_THANH_TOAN'")
+    Double sumTotalAmountByUserId(@Param("userId") Integer userId);
+    
+    // Đếm số hóa đơn theo thời gian tạo
+    @Query("SELECT COUNT(h) FROM Invoice h WHERE h.ngayDat >= :date")
+    long countByCreatedAtAfter(@Param("date") LocalDateTime date);
 
 }
